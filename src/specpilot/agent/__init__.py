@@ -1,3 +1,4 @@
+from specpilot.agent.agent import AgentResponse, ExecutedToolCall, SpecPilotAgent
 from specpilot.agent.config import LLMConfig
 from specpilot.agent.provider import (
     ChatMessage,
@@ -21,4 +22,7 @@ __all__ = [
     "ToolCall",
     "mcp_tool_to_llm_tool",
     "convert_registry_to_llm_tools",
+    "SpecPilotAgent",
+    "AgentResponse",
+    "ExecutedToolCall",
 ]
