@@ -51,8 +51,9 @@ class ToolExecutor:
         if extra_headers:
             headers.update(extra_headers)
 
-        # Apply authentication if configured
-        eff_auth = auth_config or self.auth_config
+        # Apply authentication if configured or resolved
+        from specpilot.auth.manager import AuthManager
+        eff_auth = auth_config or self.auth_config or AuthManager.resolve()
         if eff_auth:
             eff_auth.apply(headers, query_params)
 
@@ -107,6 +108,43 @@ class ToolExecutor:
             is_error = response.is_error
             error_msg = f"HTTP {response.status_code}: {response.reason_phrase}" if is_error else None
 
+            # Auto-capture token if login/auth request succeeded
+            captured_token: Optional[str] = None
+            if not is_error:
+                captured_token = AuthManager.auto_capture_token(
+                    parsed_body,
+                    headers=dict(response.headers),
+                    tool_name=tool.name,
+                    login_arguments=arguments,
+                )
+
+            # Auto 401/403 recovery retry
+            from specpilot.auth.lifecycle import TokenLifecycleManager
+            lifecycle = TokenLifecycleManager.get_instance()
+            if response.status_code in (401, 403) and lifecycle.can_auto_refresh() and not arguments.get("_is_retry"):
+                if lifecycle.last_login_tool_name and lifecycle.last_login_arguments:
+                    # Construct and re-execute login tool to acquire fresh token
+                    login_tool = MCPTool(
+                        name=lifecycle.last_login_tool_name,
+                        description="Auto re-authentication",
+                        method="POST",
+                        path="/api/auth/login",
+                        base_url=base_url,
+                    )
+                    login_res = self.execute(login_tool, lifecycle.last_login_arguments)
+                    if not login_res.is_error and login_res.captured_token:
+                        retry_args = {k: v for k, v in arguments.items() if k != "_is_retry"}
+                        retry_args["_is_retry"] = True
+                        eff_auth_retry = AuthManager.resolve()
+                        return self.execute(
+                            tool,
+                            retry_args,
+                            base_url_override=base_url_override,
+                            extra_headers=extra_headers,
+                            timeout=timeout,
+                            auth_config=eff_auth_retry,
+                        )
+
             res = ExecutionResult(
                 status_code=response.status_code,
                 headers=clean_headers,
@@ -114,6 +152,7 @@ class ToolExecutor:
                 is_error=is_error,
                 error_message=error_msg,
                 duration_ms=round(duration_ms, 2),
+                captured_token=captured_token,
             )
             get_tracer().trace("mcp_tool_call", {
                 "tool_name": tool.name,

@@ -52,3 +52,15 @@ def test_shell_natural_language_agent_prompt(monkeypatch: pytest.MonkeyPatch) ->
 
     should_exit = engine.execute_command("How many pets are there?")
     assert should_exit is False
+
+
+def test_shell_conversational_memory_and_reset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SPECPILOT_LLM_API_KEY", "test_key_123")
+
+    engine = ShellEngine()
+    json_path = str(FIXTURES_DIR / "sample_3_0.json")
+    engine.execute_command(f"/use {json_path}")
+
+    assert len(engine.state.messages) == 0
+    engine.execute_command("/reset")
+    assert len(engine.state.messages) == 0

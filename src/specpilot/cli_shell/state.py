@@ -17,6 +17,11 @@ class SessionState:
         self.verbose: bool = False
         self.read_only: bool = False
         self.history: List[str] = []
+        self.messages: List[Any] = []
+
+    def clear_conversation(self) -> None:
+        """Clear agent conversational message history."""
+        self.messages.clear()
 
     def load_specification(self, location: str) -> NormalizedSpec:
         """Load and normalize an OpenAPI specification and update session registry."""

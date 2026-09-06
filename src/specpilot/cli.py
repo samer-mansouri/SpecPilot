@@ -32,7 +32,9 @@ def cli() -> None:
 )
 def shell_cmd(location: Optional[str], read_only: bool) -> None:
     """Launch interactive SpecPilot shell session."""
+    from specpilot.auth.manager import AuthManager
     from specpilot.cli_shell import SessionState, ShellEngine
+    AuthManager.resolve()
     state = SessionState()
     state.read_only = read_only
     engine = ShellEngine(state=state)
@@ -187,9 +189,16 @@ def call_cmd(tool_name: str, location: str, json_args: str, base_url: Optional[s
             parsed_args = json.loads(json_args)
             if not isinstance(parsed_args, dict):
                 raise ValueError("JSON arguments must be an object.")
-        except Exception as err:
-            error_console.print(f"[bold red]Error:[/bold red] Invalid --json argument: {err}")
-            sys.exit(1)
+        except Exception:
+            try:
+                import yaml
+                parsed_args = yaml.safe_load(json_args)
+                if not isinstance(parsed_args, dict):
+                    raise ValueError("JSON arguments must be an object.")
+            except Exception as err:
+                error_console.print(f"[bold red]Error:[/bold red] Invalid --json argument: {err}")
+                sys.exit(1)
+
 
         executor = ToolExecutor()
         result = executor.execute(tool, parsed_args, base_url_override=base_url)
@@ -198,14 +207,17 @@ def call_cmd(tool_name: str, location: str, json_args: str, base_url: Optional[s
         status_style = "bold green" if not result.is_error else "bold red"
         console.print(f"[{status_style}]HTTP Status: {result.status_code}[/{status_style}] ({result.duration_ms}ms)")
 
+        if result.captured_token:
+            console.print("[bold green][Auth Token Detected][/bold green] Automatically saved SPECPILOT_BEARER_TOKEN to runtime environment and .env")
+
         if result.is_error and result.error_message:
             console.print(f"[bold red]Error Message:[/bold red] {result.error_message}")
 
         console.print("\n[bold cyan]Response Body:[/bold cyan]")
         if isinstance(result.body, (dict, list)):
-            console.print(Syntax(json.dumps(result.body, indent=2), "json", theme="monokai"))
+            console.print(Syntax(json.dumps(result.body, indent=2), "json", theme="monokai", word_wrap=True))
         else:
-            console.print(str(result.body))
+            console.print(str(result.body), soft_wrap=True)
         console.print()
     except SpecPilotError as err:
         error_console.print(f"[bold red]Error:[/bold red] {err}")

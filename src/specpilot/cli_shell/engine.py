@@ -99,6 +99,9 @@ class ShellEngine:
             self._handle_safety(args_str)
         elif command_name == "/clear":
             console.clear()
+        elif command_name == "/reset":
+            self.state.clear_conversation()
+            console.print("[bold green]Conversational memory reset.[/bold green]")
         elif command_name == "/call":
             self._handle_call(args_str)
         else:
@@ -131,6 +134,7 @@ class ShellEngine:
         table.add_row("/safety [read-only|interactive]", "Inspect or set safety execution mode")
         table.add_row("/history", "View session command history (secrets redacted)")
         table.add_row("/clear", "Clear terminal screen")
+        table.add_row("/reset", "Reset conversational message memory")
         table.add_row("/help", "Display this help reference")
         table.add_row("/exit", "Exit interactive shell")
 
@@ -280,14 +284,16 @@ class ShellEngine:
 
         status_style = "bold green" if not result.is_error else "bold red"
         console.print(f"[{status_style}]HTTP Status: {result.status_code}[/{status_style}] ({result.duration_ms}ms)")
+        if result.captured_token:
+            console.print("[bold green][Auth Token Detected][/bold green] Automatically saved SPECPILOT_BEARER_TOKEN to runtime environment and .env")
         if self.state.verbose:
             console.print(f"[dim]URL: {tool.method} {result.headers}[/dim]")
 
         console.print("\n[bold cyan]Response Body:[/bold cyan]")
         if isinstance(result.body, (dict, list)):
-            console.print(Syntax(json.dumps(result.body, indent=2), "json", theme="monokai"))
+            console.print(Syntax(json.dumps(result.body, indent=2), "json", theme="monokai", word_wrap=True))
         else:
-            console.print(str(result.body))
+            console.print(str(result.body), soft_wrap=True)
         console.print()
 
     def _handle_safety(self, mode: str) -> None:
@@ -350,7 +356,11 @@ class ShellEngine:
             read_only=self.state.read_only,
             approval_handler=_approval_handler,
             verbose_callback=_verbose_callback if self.state.verbose else None,
+            existing_messages=self.state.messages,
         )
+
+        if response.messages:
+            self.state.messages = response.messages
 
         if response.is_error:
             error_console.print(f"[bold red]Agent Error:[/bold red] {response.content}")

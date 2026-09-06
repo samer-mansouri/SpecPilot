@@ -156,3 +156,36 @@ def test_contract_test_executor_with_auth():
     assert result.status == TestStatus.PASSED
     assert route.called
     assert route.calls.last.request.headers["x-api-key"] == "test_api_key"
+
+
+def test_auth_manager_auto_capture_token(tmp_path, monkeypatch):
+    dotenv_file = tmp_path / ".env"
+    dotenv_file.write_text('SPECPILOT_LLM_MODEL="gpt-4o-mini"\n')
+
+    response_payload = {
+        "success": True,
+        "data": {
+            "accessToken": "eyJhbGciOiJIUzI1NiJ9.test_token_content.signature",
+            "userId": 1,
+        },
+    }
+
+    token = AuthManager.auto_capture_token(response_payload, dotenv_path=str(dotenv_file))
+
+    assert token == "eyJhbGciOiJIUzI1NiJ9.test_token_content.signature"
+    assert os.getenv("SPECPILOT_BEARER_TOKEN") == token
+    content = dotenv_file.read_text()
+    assert 'SPECPILOT_BEARER_TOKEN="eyJhbGciOiJIUzI1NiJ9.test_token_content.signature"' in content
+
+
+def test_auth_config_sanitizes_multiline_token():
+    config = AuthConfig(
+        auth_type=AuthType.BEARER,
+        bearer_token="eyJhbGciOiJIUzI1NiJ9.\n eyJzdWIiOiIxIn0.\n signature\n",
+    )
+    headers = {}
+    query_params = {}
+    config.apply(headers, query_params)
+
+    assert headers["Authorization"] == "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature"
+

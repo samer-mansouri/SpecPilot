@@ -31,16 +31,20 @@ class AuthConfig(BaseModel):
         """Apply authentication credentials to headers or query parameters."""
         if self.auth_type == AuthType.BEARER:
             if self.bearer_token:
-                headers["Authorization"] = f"Bearer {self.bearer_token}"
+                clean_token = "".join(self.bearer_token.split()).strip('"').strip("'")
+                if clean_token:
+                    headers["Authorization"] = f"Bearer {clean_token}"
         elif self.auth_type == AuthType.API_KEY:
             if self.api_key:
-                if self.api_key_in == APIKeyLocation.HEADER:
-                    headers[self.api_key_name] = self.api_key
-                elif self.api_key_in == APIKeyLocation.QUERY:
-                    query_params[self.api_key_name] = self.api_key
+                clean_key = "".join(self.api_key.split()).strip('"').strip("'")
+                if clean_key:
+                    if self.api_key_in == APIKeyLocation.HEADER:
+                        headers[self.api_key_name] = clean_key
+                    elif self.api_key_in == APIKeyLocation.QUERY:
+                        query_params[self.api_key_name] = clean_key
         elif self.auth_type == AuthType.BASIC:
-            user = self.basic_username or ""
-            pwd = self.basic_password or ""
+            user = (self.basic_username or "").strip()
+            pwd = (self.basic_password or "").strip()
             cred_bytes = f"{user}:{pwd}".encode("utf-8")
             encoded = base64.b64encode(cred_bytes).decode("ascii")
             headers["Authorization"] = f"Basic {encoded}"

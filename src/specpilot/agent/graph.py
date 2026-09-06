@@ -92,14 +92,12 @@ class SpecPilotGraph:
         steps = state.get("steps", 0) + 1
         messages = list(state.get("messages", []))
 
-        user_prompt = None
-        for m in messages:
-            if m.role == "user" and isinstance(m.content, str):
-                user_prompt = m.content
+        user_prompts = [m.content for m in messages if m.role == "user" and isinstance(m.content, str)]
+        combined_prompt = " ".join(user_prompts[-3:]) if user_prompts else None
 
         llm_tools = convert_registry_to_llm_tools(
             self.registry,
-            user_prompt=user_prompt,
+            user_prompt=combined_prompt,
             max_tools=128,
         )
 
@@ -312,19 +310,31 @@ class SpecPilotGraph:
         approval_handler: Optional[Callable[[str, str, Dict[str, Any]], bool]] = None,
         verbose_callback: Optional[Callable[[str, Dict[str, Any], ExecutionResult], None]] = None,
         max_steps: int = 5,
+        existing_messages: Optional[List[ChatMessage]] = None,
     ) -> Dict[str, Any]:
         """Invoke the LangGraph workflow for a prompt."""
         system_msg = ChatMessage(
             role="system",
             content=(
-                "You are SpecPilot, an API automation assistant. "
-                "Use available tools to interact with the target API as requested by the user. "
-                "Synthesize concise, helpful final answers after executing tools."
+                "You are SpecPilot, an intelligent, context-aware OpenAPI API automation assistant.\n"
+                "Guidelines:\n"
+                "1. Maintain full awareness of conversation history, user preferences, and referenced entities (e.g., candidate IDs, names, resource details).\n"
+                "2. If an API call returns HTTP 404 (Not Found), state clearly that the requested entity does NOT exist in the system. Do NOT fabricate missing details or claim sub-resources were checked if the parent entity doesn't exist.\n"
+                "3. If an HTTP 401 or 403 error occurs, explain clearly that authentication or appropriate permissions are required.\n"
+                "4. Provide concise, well-structured markdown answers based strictly on actual API responses.\n"
+                "5. If a tool returns HTTP 403 Forbidden or 404 Not Found for a query (e.g., an admin-restricted endpoint like /api/admin/users/{id}), try alternative user/search endpoints (e.g., /api/users/{id} or /api/search/semantic) before giving up."
             ),
         )
 
+        if existing_messages:
+            messages = [m for m in existing_messages if m.role != "system"]
+            messages.insert(0, system_msg)
+            messages.append(ChatMessage(role="user", content=user_prompt))
+        else:
+            messages = [system_msg, ChatMessage(role="user", content=user_prompt)]
+
         initial_state: GraphState = {
-            "messages": [system_msg, ChatMessage(role="user", content=user_prompt)],
+            "messages": messages,
             "steps": 0,
             "max_steps": max_steps,
             "read_only": read_only,

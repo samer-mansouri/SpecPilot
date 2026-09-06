@@ -5,6 +5,19 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-06
+
+### Added
+- Universal OpenAPI Authentication Engine (`AuthEndpointDetector`) for automatically identifying login, refresh, token, and auth endpoints across OpenAPI specifications.
+- Intelligent Token Extractor (`TokenExtractor`) for extracting Bearer, OAuth2, API Key, and session tokens from nested HTTP JSON responses and headers.
+- Token Lifecycle Manager (`TokenLifecycleManager`) providing token expiration detection, background re-authentication, and persistent `.env` credential state (`SPECPILOT_LOGIN_TOOL`, `SPECPILOT_LOGIN_ARGS`, `SPECPILOT_BEARER_TOKEN`).
+- Transparent HTTP 401/403 auto-recovery in `ToolExecutor`, automatically re-authenticating and retrying failed API requests upon token expiry.
+- Multi-turn conversational memory retention across prompts in `specpilot shell` (`SpecPilotAgent`).
+- Interactive REPL slash command `/reset` to clear conversational message history.
+
+### Fixed
+- Sanitized line breaks in authorization header tokens (`AuthConfig.apply()` and `AuthManager.resolve()`), preventing `httpx.IllegalHeaderValue` errors caused by terminal line wrapping when copying raw token values.
+
 ## [1.0.2] - 2026-09-06
 
 ### Fixed

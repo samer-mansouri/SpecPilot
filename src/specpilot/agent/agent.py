@@ -17,12 +17,15 @@ class ExecutedToolCall(BaseModel):
     result_summary: str = ""
 
 
+from specpilot.agent.provider import ChatMessage, LLMProvider
+
 class AgentResponse(BaseModel):
     content: str
     steps: int = 0
     tool_calls: List[ExecutedToolCall] = Field(default_factory=list)
     is_error: bool = False
     error_message: Optional[str] = None
+    messages: List[ChatMessage] = Field(default_factory=list)
 
 
 class SpecPilotAgent:
@@ -54,6 +57,7 @@ class SpecPilotAgent:
         read_only: bool = False,
         approval_handler: Optional[Callable[[str, str, Dict[str, Any]], bool]] = None,
         verbose_callback: Optional[Callable[[str, Dict[str, Any], ExecutionResult], None]] = None,
+        existing_messages: Optional[List[ChatMessage]] = None,
     ) -> AgentResponse:
         """Run the agentic tool execution loop via LangGraph."""
         res_state = self.graph.run(
@@ -62,6 +66,7 @@ class SpecPilotAgent:
             approval_handler=approval_handler,
             verbose_callback=verbose_callback,
             max_steps=self.max_steps,
+            existing_messages=existing_messages,
         )
 
         tool_calls: List[ExecutedToolCall] = []
@@ -94,4 +99,5 @@ class SpecPilotAgent:
             tool_calls=tool_calls,
             is_error=is_err,
             error_message=err_msg,
+            messages=res_state.get("messages", []),
         )

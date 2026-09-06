@@ -27,3 +27,4 @@ class ExecutionResult(BaseModel):
     is_error: bool = False
     error_message: Optional[str] = None
     duration_ms: float = 0.0
+    captured_token: Optional[str] = None
