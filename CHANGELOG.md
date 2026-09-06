@@ -5,6 +5,16 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-06
+
+### Added
+- Interactive REPL shell (`specpilot shell`) powered by `prompt_toolkit` and `rich`.
+- Active specification session state (`SessionState`) for switching specs via `/use <location>` and inspecting metadata via `/api`.
+- Interactive slash commands: `/help`, `/use`, `/api`, `/tools [tag]`, `/inspect <tool>`, `/call <tool> [json]`, `/history`, `/verbose [on|off]`, `/clear`, `/exit`.
+- Dynamic autocompletion (`SpecPilotCompleter`) for slash commands, tags, and registered tool names.
+- Automatic secret redaction for session history ensuring API keys and tokens are never stored.
+- Verbose mode toggling to output spec, tool count, and HTTP execution metrics without exposing credentials.
+
 ## [0.2.0] - 2026-09-06
 
 ### Added
