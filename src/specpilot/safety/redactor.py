@@ -11,13 +11,16 @@ class SecretRedactor:
             r'(\"(?:api[_-]?key|bearer|token|secret|password|auth|authorization|access[_-]?token|refresh[_-]?token)\"\s*:\s*\")([^\"]+)(\")',
             re.IGNORECASE,
         ),
-        # Key-value or header strings (e.g. api_key=xyz, Authorization: Bearer xyz)
+        # Authorization header with or without Bearer prefix
         re.compile(
-            r"((?:api[_-]?key|bearer|token|secret|password|authorization)\s*[:=]\s*['\"]?)([^'\"\s,{}]+)(['\"]?)",
+            r'((?:authorization|api[_-]?key)\s*:\s*(?:bearer\s+)?)(\S+)',
             re.IGNORECASE,
         ),
-        # Bearer tokens in headers
-        re.compile(r"(Bearer\s+)[A-Za-z0-9_\-\.=]+", re.IGNORECASE),
+        # Key=value assignment in parameters or query strings
+        re.compile(
+            r'((?:api[_-]?key|bearer|token|secret|password|access[_-]?token)\s*=\s*)([^\s&,{}"]+)',
+            re.IGNORECASE,
+        ),
     ]
 
     SENSITIVE_KEYS = {
@@ -44,10 +47,11 @@ class SecretRedactor:
         redacted = text
         for pattern in cls.PATTERNS:
             def _replacer(match: re.Match) -> str:
-                if len(match.groups()) >= 3:
-                    return f"{match.group(1)}[REDACTED]{match.group(3)}"
-                elif len(match.groups()) >= 1:
-                    return f"{match.group(1)}[REDACTED]"
+                groups = match.groups()
+                if len(groups) == 3:
+                    return f"{groups[0]}[REDACTED]{groups[2]}"
+                elif len(groups) == 2:
+                    return f"{groups[0]}[REDACTED]"
                 return "[REDACTED]"
 
             redacted = pattern.sub(_replacer, redacted)
