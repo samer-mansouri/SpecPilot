@@ -1,25 +1,21 @@
-import re
 from typing import List, Optional
 
 from specpilot.mcp.registry import MCPToolRegistry
 from specpilot.openapi.loader import SpecLoader
 from specpilot.openapi.models import NormalizedSpec
 from specpilot.openapi.parser import OpenAPIParser
+from specpilot.safety.redactor import SecretRedactor
 
 
 class SessionState:
     """Manages state for an interactive SpecPilot CLI session."""
-
-    SECRET_PATTERNS = [
-        re.compile(r'("(?:api[_-]?key|bearer|token|secret|password)"\s*:\s*")([^"]+)(")', re.IGNORECASE),
-        re.compile(r"((?:api[_-]?key|bearer|token|secret|password)\s*[:=]\s*['\"]?)([^'\"\s,{}]+)(['\"]?)", re.IGNORECASE),
-    ]
 
     def __init__(self) -> None:
         self.spec: Optional[NormalizedSpec] = None
         self.registry: Optional[MCPToolRegistry] = None
         self.location: Optional[str] = None
         self.verbose: bool = False
+        self.read_only: bool = False
         self.history: List[str] = []
 
     def load_specification(self, location: str) -> NormalizedSpec:
@@ -43,9 +39,4 @@ class SessionState:
 
     def redact_secrets(self, text: str) -> str:
         """Redact sensitive credentials from text strings."""
-        redacted = text
-        for pattern in self.SECRET_PATTERNS:
-            def _replacer(match: re.Match) -> str:
-                return f"{match.group(1)}[REDACTED]{match.group(3)}"
-            redacted = pattern.sub(_replacer, redacted)
-        return redacted
+        return SecretRedactor.redact(text)

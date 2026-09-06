@@ -8,7 +8,7 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot version `v0.4.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, an interactive REPL shell (`specpilot shell`), and LLM-powered natural language tool execution loops.
+SpecPilot version `v0.5.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, an interactive REPL shell (`specpilot shell`), LangGraph multi-step agent workflows, deterministic safety classification, and human-in-the-loop approval controls.
 
 ## Features
 
@@ -20,8 +20,10 @@ SpecPilot version `v0.4.0` features OpenAPI specification loading, OpenAPI norma
 - Automatic tool input JSON Schema generation covering path, query, header parameters, and JSON request bodies.
 - HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
 - Persistent interactive REPL shell (`specpilot shell`) supporting slash commands and natural-language instructions with tab-autocompletion.
-- Model provider abstraction (`LLMProvider`, `OpenAICompatibleProvider`, `LLMConfig`) supporting OpenAI-compatible chat completion APIs.
-- Bounded agentic tool execution loop (`SpecPilotAgent`) executing multi-step tool calls, validating arguments, and synthesizing answers.
+- LangGraph stateful agent workflow (`SpecPilotGraph`) executing multi-step API workflows (e.g., list products -> select product -> create order).
+- Deterministic Safety Policy Engine (`SafetyPolicy`, `OperationRisk`) classifying operations as `READ_ONLY`, `MUTATING`, or `DESTRUCTIVE`.
+- Interactive human-in-the-loop approval confirmation prompts before executing side-effecting operations.
+- Enforced read-only safety mode via CLI flag (`specpilot shell --read-only`) or REPL command (`/safety read-only`) blocking mutating/destructive requests prior to network execution.
 - Secret-safe session history logging and verbose mode operational logging with automatic credential redaction.
 - Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
@@ -31,18 +33,19 @@ SpecPilot version `v0.4.0` features OpenAPI specification loading, OpenAPI norma
 Launch the persistent interactive shell:
 
 ```bash
-specpilot shell [specification-path-or-url]
+specpilot shell [specification-path-or-url] [--read-only]
 ```
 
 Inside the interactive shell:
 
 ```text
-SpecPilot v0.4.0
+SpecPilot v0.5.0
 Connected API: Swagger Petstore (1.0.0)
 Location: ./petstore.yaml
 Tools: 3 available
 
 specpilot> /help
+specpilot> /safety read-only
 specpilot> /tools
 specpilot> /inspect list_pets
 specpilot> /call list_pets {"limit": 5}
@@ -58,11 +61,21 @@ Available slash commands in `specpilot shell`:
 - `/tools [tag]`: List all registered MCP tools, optionally filtered by tag.
 - `/inspect <tool>`: Show detailed JSON Schema input parameters and operation details for a tool.
 - `/call <tool> [json]`: Execute an MCP tool with optional JSON arguments.
+- `/safety [read-only|interactive]`: Inspect or switch session safety execution mode.
 - `/verbose [on|off]`: Toggle verbose output mode.
 - `/history`: Display secret-redacted prompt command history.
 - `/clear`: Clear terminal screen.
 - `/help`: Display help text and available shell commands.
 - `/exit`: Exit the shell session.
+
+## Safety Model
+
+SpecPilot includes a built-in Safety Policy Engine to protect remote API data:
+
+- **Read-Only (`GET`, `HEAD`, `OPTIONS`)**: Executed automatically during natural-language workflows.
+- **Mutating (`POST`, `PUT`, `PATCH`)**: Requires human confirmation before execution in interactive mode.
+- **Destructive (`DELETE`)**: Always requires explicit human approval before execution.
+- **Read-Only Mode (`--read-only` or `/safety read-only`)**: Hard-enforces read-only execution by blocking all `POST`, `PUT`, `PATCH`, and `DELETE` requests before they reach the network executor.
 
 ## Installation
 
@@ -146,8 +159,14 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
                            |
                            v
 +--------------------------------------------------------+
-|                 LLM Agent Orchestrator                 |
-|       (SpecPilotAgent & OpenAICompatibleProvider)      |
+|            LangGraph Stateful Agent Workflow           |
+|         (SpecPilotGraph & OpenAICompatibleProvider)    |
++--------------------------------------------------------+
+                           |
+                           v
++--------------------------------------------------------+
+|                  Safety Policy Engine                  |
+|     (OperationRisk Classification & Redactor)          |
 +--------------------------------------------------------+
                            |
                            v
@@ -172,7 +191,7 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 ## Known Limitations
 
 - Remote `$ref` resolution across external URLs is not yet supported.
-- Fine-grained interactive human approval for mutating side-effecting tools will be introduced in upcoming safety releases.
+- Automated API contract testing will be introduced in upcoming releases.
 
 ## Development
 
@@ -194,4 +213,4 @@ uv run pytest
 
 ## Version
 
-Current version: `0.4.0`
+Current version: `0.5.0`
