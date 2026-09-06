@@ -8,7 +8,7 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAPI normalization, and Model Context Protocol (MCP) server foundation layers are implemented.
+SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAPI normalization, MCP server foundation, and dynamic tool generation from OpenAPI operations are fully implemented.
 
 ## Features
 
@@ -16,7 +16,9 @@ SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAP
 - Load specifications from local file paths and remote HTTP/HTTPS URLs with timeout handling.
 - Resolve local `$ref` pointers (e.g. `#/components/schemas/...`, `#/components/parameters/...`).
 - Normalize operations, parameters, request bodies, responses, tags, servers, and security definitions into typed Pydantic models.
-- Model Context Protocol (MCP) server integration supporting dynamic tool definitions.
+- Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools.
+- Automatic tool input schema generation covering path, query, header parameters, and JSON request bodies.
+- Deterministic tool naming and collision resolution.
 - Terminal CLI inspection via `specpilot import` and `specpilot endpoints`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 
