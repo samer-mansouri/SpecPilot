@@ -215,6 +215,78 @@ def call_cmd(tool_name: str, location: str, json_args: str, base_url: Optional[s
         sys.exit(1)
 
 
+@cli.command(name="test")
+@click.argument("location", type=str)
+@click.option("--tag", type=str, default=None, help="Filter test scenarios by operation tag.")
+@click.option("--base-url", type=str, default=None, help="Target API base URL override.")
+@click.option(
+    "--read-only",
+    is_flag=True,
+    default=False,
+    help="Enforce read-only safety mode (skips mutating/destructive tests).",
+)
+@click.option(
+    "--allow-mutating",
+    is_flag=True,
+    default=False,
+    help="Allow execution of mutating/destructive contract tests without prompt.",
+)
+@click.option("--json-output", type=str, default=None, help="Export contract test run report to JSON file.")
+def test_cmd(
+    location: str,
+    tag: Optional[str],
+    base_url: Optional[str],
+    read_only: bool,
+    allow_mutating: bool,
+    json_output: Optional[str],
+) -> None:
+    """Run OpenAPI-driven API contract tests against target API."""
+    try:
+        from specpilot.safety.policy import SafetyPolicy
+        from specpilot.testing.executor import ContractTestExecutor
+        from specpilot.testing.generator import ScenarioGenerator
+        from specpilot.testing.reporter import TestReporter
+
+        loader = SpecLoader()
+        loaded = loader.load(location)
+        spec = OpenAPIParser(loaded).parse()
+
+        target_url = base_url or (spec.servers[0].url if spec.servers else "http://localhost:8000")
+
+        safety_policy = SafetyPolicy(read_only_mode=read_only)
+        generator = ScenarioGenerator(safety_policy=safety_policy)
+        scenarios = generator.generate_scenarios_for_spec(spec, tag_filter=tag)
+
+        executor = ContractTestExecutor(
+            base_url=target_url,
+            safety_policy=safety_policy,
+            allow_mutating=allow_mutating,
+        )
+
+        report = executor.execute_suite(
+            scenarios=scenarios,
+            api_title=spec.title,
+            api_version=spec.api_version,
+        )
+
+        reporter = TestReporter(console=console)
+        reporter.print_report(report)
+
+        if json_output:
+            reporter.export_json(report, json_output)
+            console.print(f"[bold green]Report exported to JSON:[/bold green] {json_output}\n")
+
+        if report.failed_count > 0:
+            sys.exit(1)
+
+    except SpecPilotError as err:
+        error_console.print(f"[bold red]Error:[/bold red] {err}")
+        sys.exit(1)
+    except Exception as err:
+        error_console.print(f"[bold red]Unexpected Error:[/bold red] {err}")
+        sys.exit(1)
+
+
 def main() -> None:
     cli()
 

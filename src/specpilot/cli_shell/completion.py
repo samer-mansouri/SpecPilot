@@ -15,6 +15,7 @@ class SpecPilotCompleter(Completer):
         "/tools",
         "/inspect",
         "/call",
+        "/test",
         "/verbose",
         "/safety",
         "/history",
@@ -56,7 +57,7 @@ class SpecPilotCompleter(Completer):
                 if t.name.startswith(arg_prefix):
                     yield Completion(t.name, start_position=-len(arg_prefix))
 
-        elif cmd_name == "/tools" and self.state.spec:
+        elif cmd_name in ("/tools", "/test") and self.state.spec:
             # Complete tags
             tags = self.state.spec.tags
             for tag in tags:
