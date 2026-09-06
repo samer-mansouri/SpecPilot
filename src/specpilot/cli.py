@@ -287,9 +287,161 @@ def test_cmd(
         sys.exit(1)
 
 
+# Profile CLI commands
+@cli.group(name="profile")
+def profile_group() -> None:
+    """Manage persistent API target configuration profiles."""
+    pass
+
+
+@profile_group.command(name="add")
+@click.argument("name", type=str)
+@click.option("--location", type=str, default=None, help="OpenAPI specification path or URL.")
+@click.option("--base-url", type=str, default=None, help="Base server URL for API requests.")
+@click.option("--model", type=str, default="gpt-4o-mini", help="LLM model name.")
+@click.option("--read-only", is_flag=True, default=False, help="Set read-only safety mode preference.")
+def profile_add(name: str, location: Optional[str], base_url: Optional[str], model: str, read_only: bool) -> None:
+    """Add a new API configuration profile."""
+    from specpilot.config import ConfigManager, Profile
+    mgr = ConfigManager()
+    profile = Profile(
+        name=name,
+        spec_location=location,
+        base_url=base_url,
+        model_name=model,
+        read_only=read_only,
+    )
+    mgr.add_profile(profile)
+    console.print(f"[bold green]Profile '{name}' added successfully.[/bold green]")
+
+
+@profile_group.command(name="list")
+def profile_list() -> None:
+    """List all saved configuration profiles."""
+    from specpilot.config import ConfigManager
+    mgr = ConfigManager()
+    profiles = mgr.list_profiles()
+    store = mgr.load_store()
+
+    if not profiles:
+        console.print("[dim]No profiles saved yet. Use [bold]specpilot profile add <name>[/bold] to create one.[/dim]")
+        return
+
+    table = Table(title="SpecPilot Configuration Profiles", show_header=True, header_style="bold cyan")
+    table.add_column("Active", justify="center", width=8)
+    table.add_column("Name", style="bold green", min_width=15)
+    table.add_column("Spec Location", style="white")
+    table.add_column("Base URL", style="underline blue")
+    table.add_column("Model", style="magenta")
+    table.add_column("Safety", style="yellow")
+
+    for p in profiles:
+        active_mark = "[bold green]*[/bold green]" if store.active_profile == p.name else ""
+        safety_str = "Read-Only" if p.read_only else "Interactive"
+        table.add_row(
+            active_mark,
+            p.name,
+            p.spec_location or "-",
+            p.base_url or "-",
+            p.model_name,
+            safety_str,
+        )
+
+    console.print()
+    console.print(table)
+    console.print()
+
+
+@profile_group.command(name="use")
+@click.argument("name", type=str)
+def profile_use(name: str) -> None:
+    """Switch the active configuration profile."""
+    from specpilot.config import ConfigManager
+    mgr = ConfigManager()
+    if mgr.set_active_profile(name):
+        console.print(f"[bold green]Switched active profile to '{name}'.[/bold green]")
+    else:
+        error_console.print(f"[bold red]Error:[/bold red] Profile '{name}' not found.")
+        sys.exit(1)
+
+
+@profile_group.command(name="show")
+@click.argument("name", type=str, required=False, default=None)
+def profile_show(name: Optional[str]) -> None:
+    """Show details of a profile (or current active profile)."""
+    from specpilot.config import ConfigManager
+    mgr = ConfigManager()
+    active_p = mgr.get_active_profile()
+    target_name = name or (active_p.name if active_p else None)
+
+    if not target_name:
+        error_console.print("[bold red]Error:[/bold red] No profile specified and no active profile set.")
+        sys.exit(1)
+
+    profile = mgr.get_profile(target_name)
+    if not profile:
+        error_console.print(f"[bold red]Error:[/bold red] Profile '{target_name}' not found.")
+        sys.exit(1)
+
+    console.print()
+    console.print(Panel(f"[bold green]Profile Details: {profile.name}[/bold green]", expand=False))
+    console.print(f"[bold]Spec Location:[/bold] {profile.spec_location or '-'}")
+    console.print(f"[bold]Base Server URL:[/bold] {profile.base_url or '-'}")
+    console.print(f"[bold]Model Provider:[/bold] {profile.model_provider}")
+    console.print(f"[bold]Model Name:[/bold] {profile.model_name}")
+    console.print(f"[bold]Timeout:[/bold] {profile.timeout}s")
+    console.print(f"[bold]Read-Only Mode:[/bold] {profile.read_only}")
+    console.print()
+
+
+@profile_group.command(name="remove")
+@click.argument("name", type=str)
+def profile_remove(name: str) -> None:
+    """Remove a profile."""
+    from specpilot.config import ConfigManager
+    mgr = ConfigManager()
+    if mgr.remove_profile(name):
+        console.print(f"[bold green]Profile '{name}' removed successfully.[/bold green]")
+    else:
+        error_console.print(f"[bold red]Error:[/bold red] Profile '{name}' not found.")
+        sys.exit(1)
+
+
+# Config CLI commands
+@cli.group(name="config")
+def config_group() -> None:
+    """Inspect SpecPilot configuration settings and paths."""
+    pass
+
+
+@config_group.command(name="show")
+def config_show() -> None:
+    """Show configuration summary and active profile."""
+    from specpilot.config import ConfigManager
+    mgr = ConfigManager()
+    store = mgr.load_store()
+    active = mgr.get_active_profile()
+
+    console.print()
+    console.print(Panel("[bold green]SpecPilot Global Configuration[/bold green]", expand=False))
+    console.print(f"[bold]Config Path:[/bold] {mgr.config_path}")
+    console.print(f"[bold]Total Profiles:[/bold] {len(store.profiles)}")
+    console.print(f"[bold]Active Profile:[/bold] {active.name if active else 'None'}")
+    console.print()
+
+
+@config_group.command(name="path")
+def config_path() -> None:
+    """Print path to persistent configuration file."""
+    from specpilot.config import ConfigManager
+    mgr = ConfigManager()
+    console.print(str(mgr.config_path))
+
+
 def main() -> None:
     cli()
 
 
 if __name__ == "__main__":
     main()
+
