@@ -4,11 +4,11 @@ SpecPilot is an interactive CLI developer tool for OpenAPI-driven API automation
 
 ## Overview
 
-SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, request/response models, and security definitions, providing CLI commands for specification analysis and inspection.
+SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, request/response models, and security definitions, dynamically converts API operations into Model Context Protocol (MCP) tools, and provides CLI commands for inspection and tool execution.
 
 ## Current Status
 
-SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAPI normalization, Model Context Protocol (MCP) tool generation, HTTP execution, and CLI tool inspection/call commands are fully implemented.
+SpecPilot `v0.2.0` is released. OpenAPI 3.x loading, normalization, dynamic MCP tool conversion, HTTP execution, and CLI tool inspection/call commands are fully implemented and tested.
 
 ## Features
 
@@ -16,8 +16,8 @@ SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAP
 - Load specifications from local file paths and remote HTTP/HTTPS URLs with timeout handling.
 - Resolve local `$ref` pointers (e.g. `#/components/schemas/...`, `#/components/parameters/...`).
 - Normalize operations, parameters, request bodies, responses, tags, servers, and security definitions into typed Pydantic models.
-- Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools.
-- Automatic tool input schema generation covering path, query, header parameters, and JSON request bodies.
+- Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools with clean snake_case naming and collision resolution.
+- Automatic tool input JSON Schema generation covering path, query, header parameters, and JSON request bodies.
 - HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
 - Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
@@ -118,14 +118,14 @@ uv run pytest
 
 ## Roadmap
 
-- **Milestone 1**: OpenAPI Core foundation (v0.1.0)
-- **Milestone 2**: Dynamic MCP Tools (v0.2.0)
-- **Milestone 3**: Agentic Workflows & Multi-Step Execution (v0.3.0)
-- **Milestone 4**: Safety & Human Approval (v0.4.0)
-- **Milestone 5**: Contract & API Testing (v0.5.0)
-- **Milestone 6**: CLI Polish & Interactive Shell (v0.6.0)
-- **Milestone 7**: Production Packaging & 1.0 Release (v1.0.0)
+- **OpenAPI Core**: OpenAPI specification loading and normalization (`v0.1.0`)
+- **Dynamic MCP Tools**: Dynamic OpenAPI to MCP tool conversion and HTTP execution (`v0.2.0`)
+- **Agent Workflows**: Multi-step tool execution and LLM orchestration (`v0.3.0`)
+- **Safety System**: Side-effect protection and human approval (`v0.4.0`)
+- **Contract Testing**: API contract validation (`v0.5.0`)
+- **CLI Shell**: Interactive shell (`v0.6.0`)
+- **Production Release**: General availability (`v1.0.0`)
 
 ## Version
 
-Current version: `0.1.0`
+Current version: `0.2.0`
