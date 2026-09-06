@@ -1,4 +1,5 @@
 from specpilot.mcp.converter import ToolConverter
+from specpilot.mcp.executor import ToolExecutionError, ToolExecutor
 from specpilot.mcp.models import ExecutionResult, MCPTool
 from specpilot.mcp.registry import MCPToolRegistry
 from specpilot.mcp.server import SpecPilotMCPServer
@@ -9,4 +10,6 @@ __all__ = [
     "SpecPilotMCPServer",
     "ToolConverter",
     "MCPToolRegistry",
+    "ToolExecutor",
+    "ToolExecutionError",
 ]
