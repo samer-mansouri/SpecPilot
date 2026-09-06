@@ -102,15 +102,22 @@ SpecPilot includes a built-in Safety Policy Engine to protect remote API data:
 
 ## Installation
 
-Ensure Python 3.10+ and `uv` (or `pip`) are installed.
+Ensure Python 3.10+ is installed.
 
 ```bash
-# Editable install using uv
-uv pip install -e .
+# Install package using pip
+pip install specpilot
 
-# Or using standard pip
+# Or install locally in editable mode
 pip install -e .
+
+# Or build source distribution and wheel using uv
+uv build
+pip install dist/specpilot-*.whl
 ```
+
+Once installed, the `specpilot` executable entry point will be available globally in your PATH.
+
 
 ## Configuration
 
