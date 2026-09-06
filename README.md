@@ -8,14 +8,14 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot is in active development (`v0.1.0-dev`). OpenAPI 3.x loading, normalization, and CLI inspection commands (`import` and `endpoints`) are fully implemented and verified under Milestone 1 (OpenAPI Core).
+SpecPilot `v0.1.0` is released. OpenAPI 3.x loading, normalization, and CLI inspection commands (`import` and `endpoints`) are fully implemented and tested.
 
 ## Features
 
 - Parse OpenAPI 3.x specifications (JSON and YAML).
 - Load specifications from local file paths and remote HTTP/HTTPS URLs with timeout handling.
 - Resolve local `$ref` pointers (e.g. `#/components/schemas/...`, `#/components/parameters/...`).
-- Normalize operations, parameters, request bodies, responses, tags, servers, and security definitions into typed models.
+- Normalize operations, parameters, request bodies, responses, tags, servers, and security definitions into typed Pydantic models.
 - Terminal CLI inspection via `specpilot import` and `specpilot endpoints`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 
@@ -39,6 +39,23 @@ specpilot import ./tests/fixtures/sample_3_0.yaml
 
 # List discovered endpoints and operations
 specpilot endpoints ./tests/fixtures/sample_3_0.yaml
+```
+
+## CLI Usage
+
+```bash
+# Display help and available commands
+specpilot --help
+
+# Import local JSON or YAML specification
+specpilot import ./openapi.json
+specpilot import ./openapi.yaml
+
+# Import remote OpenAPI specification over HTTP/HTTPS
+specpilot import https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
+
+# List endpoints table
+specpilot endpoints ./openapi.yaml
 ```
 
 ## Architecture
@@ -65,12 +82,17 @@ specpilot endpoints ./tests/fixtures/sample_3_0.yaml
 ## Supported OpenAPI Features
 
 - OpenAPI 3.0.x and 3.1.x specifications.
-- Local `$ref` pointers (e.g. `#/components/schemas/...`, `#/components/parameters/...`).
+- Local `$ref` pointers (e.g. `#/components/schemas/...`, `#/components/parameters/...`, `#/components/requestBodies/...`).
 - Standard HTTP methods: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `OPTIONS`, `HEAD`.
+
+## Known Limitations
+
+- Remote `$ref` resolution across external URLs is not yet supported (planned for future milestones).
+- Dynamic MCP Tool generation and LLM execution will be introduced in Milestone 2.
 
 ## Development
 
-Run tests using `pytest`:
+Run unit tests:
 
 ```bash
 uv run pytest
@@ -78,13 +100,13 @@ uv run pytest
 
 ## Roadmap
 
-- **Milestone 1**: OpenAPI Core foundation (Current)
-- **Milestone 2**: Dynamic MCP Tools
-- **Milestone 3**: Agentic Workflows & Multi-Step Execution
-- **Milestone 4**: Safety & Human Approval
-- **Milestone 5**: Contract & API Testing
-- **Milestone 6**: CLI Polish & Interactive Shell
-- **Milestone 7**: Production Packaging & 1.0 Release
+- **Milestone 1**: OpenAPI Core foundation (v0.1.0)
+- **Milestone 2**: Dynamic MCP Tools (v0.2.0)
+- **Milestone 3**: Agentic Workflows & Multi-Step Execution (v0.3.0)
+- **Milestone 4**: Safety & Human Approval (v0.4.0)
+- **Milestone 5**: Contract & API Testing (v0.5.0)
+- **Milestone 6**: CLI Polish & Interactive Shell (v0.6.0)
+- **Milestone 7**: Production Packaging & 1.0 Release (v1.0.0)
 
 ## Version
 
