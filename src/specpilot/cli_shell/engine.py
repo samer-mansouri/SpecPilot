@@ -72,8 +72,7 @@ class ShellEngine:
         cmd_str = raw_command.strip()
 
         if not cmd_str.startswith("/"):
-            # If line doesn't start with /, treat as /help hint or run command
-            console.print("[yellow]Unknown input. Type [bold]/help[/bold] for available commands.[/yellow]")
+            self._handle_agent_prompt(cmd_str)
             return False
 
         parts = cmd_str.split(maxsplit=1)
@@ -287,3 +286,37 @@ class ShellEngine:
         else:
             console.print(str(result.body))
         console.print()
+
+    def _handle_agent_prompt(self, prompt: str) -> None:
+        if not self.state.registry:
+            console.print(
+                "[yellow]No API specification loaded. Use [bold]/use <location>[/bold] to load one.[/yellow]"
+            )
+            return
+
+        from specpilot.agent import LLMConfig, OpenAICompatibleProvider, SpecPilotAgent
+        from specpilot.mcp.models import ExecutionResult
+
+        config = LLMConfig.from_env()
+        if not config.is_configured():
+            console.print(
+                "[yellow]LLM provider is not configured. Set [bold]SPECPILOT_LLM_API_KEY[/bold] (or [bold]OPENAI_API_KEY[/bold]) to enable natural language API instructions.[/yellow]"
+            )
+            return
+
+        provider = OpenAICompatibleProvider(config)
+        agent = SpecPilotAgent(registry=self.state.registry, provider=provider, max_steps=config.max_steps)
+
+        def _verbose_callback(tool_name: str, args: Dict[str, Any], result: ExecutionResult) -> None:
+            clean_args = self.state.redact_secrets(json.dumps(args))
+            console.print(f"[dim cyan][Tool][/dim cyan] [bold]{tool_name}[/bold]")
+            console.print(f"[dim cyan][Arguments][/dim cyan] {clean_args}")
+            status = result.status_code if result.status_code is not None else "error"
+            console.print(f"[dim cyan][Result][/dim cyan] Status {status}")
+
+        response = agent.run(prompt, verbose_callback=_verbose_callback if self.state.verbose else None)
+
+        if response.is_error:
+            error_console.print(f"[bold red]Agent Error:[/bold red] {response.content}")
+        else:
+            console.print(f"\n[bold green]SpecPilot Agent:[/bold green]\n{response.content}\n")
