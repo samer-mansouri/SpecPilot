@@ -8,7 +8,7 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot is in active development (`v0.2.0-dev`). Specification loading, OpenAPI normalization, MCP tool generation, HTTP execution, interactive inspection, secret-safe history logging, and verbose mode in `specpilot shell` are fully implemented.
+SpecPilot is in active development (`v0.2.0-dev`). Specification loading, OpenAPI normalization, MCP tool generation, HTTP execution, and a polished persistent interactive REPL shell (`specpilot shell`) with autocompletion and secret redaction are fully implemented.
 
 ## Features
 
@@ -20,7 +20,7 @@ SpecPilot is in active development (`v0.2.0-dev`). Specification loading, OpenAP
 - Automatic tool input JSON Schema generation covering path, query, header parameters, and JSON request bodies.
 - HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
 - Persistent interactive REPL shell (`specpilot shell`) supporting `/use`, `/api`, `/tools [tag]`, `/inspect <tool>`, `/call`, `/verbose [on|off]`, `/history`, `/clear`, and `/help` with tab-autocompletion.
-- Secret-safe session history logging with automatic credential redaction.
+- Secret-safe session history logging with automatic credential redaction and robust error handling.
 - Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 
@@ -58,6 +58,10 @@ specpilot inspect list_pets ./tests/fixtures/sample_3_0.yaml
 # Display help and available commands
 specpilot --help
 
+# Launch interactive shell session
+specpilot shell
+specpilot shell ./openapi.yaml
+
 # Import local JSON or YAML specification
 specpilot import ./openapi.json
 specpilot import ./openapi.yaml
@@ -84,6 +88,12 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 +--------------------------------------------------------+
 |                      SpecPilot CLI                     |
 |         (import, endpoints, tools, inspect, call)      |
++--------------------------------------------------------+
+                           |
+                           v
++--------------------------------------------------------+
+|                 Interactive Shell REPL                 |
+|       (Prompt Toolkit, Autocompletion, State)          |
 +--------------------------------------------------------+
                            |
                            v
@@ -122,7 +132,7 @@ uv run pytest
 
 - **OpenAPI Core**: OpenAPI specification loading and normalization (`v0.1.0`)
 - **Dynamic MCP Tools**: Dynamic OpenAPI to MCP tool conversion and HTTP execution (`v0.2.0`)
-- **Agent Workflows**: Multi-step tool execution and LLM orchestration (`v0.3.0`)
+- **Interactive Shell**: REPL shell with slash commands, completion, and history (`v0.3.0`)
 - **Safety System**: Side-effect protection and human approval (`v0.4.0`)
 - **Contract Testing**: API contract validation (`v0.5.0`)
 - **CLI Shell**: Interactive shell (`v0.6.0`)
