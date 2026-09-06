@@ -8,7 +8,7 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot is in active development (`v0.2.0-dev`). Specification loading, OpenAPI normalization, MCP tool generation, HTTP execution, and interactive inspection commands in `specpilot shell` are fully implemented.
+SpecPilot is in active development (`v0.2.0-dev`). Specification loading, OpenAPI normalization, MCP tool generation, HTTP execution, interactive inspection, secret-safe history logging, and verbose mode in `specpilot shell` are fully implemented.
 
 ## Features
 
@@ -19,7 +19,8 @@ SpecPilot is in active development (`v0.2.0-dev`). Specification loading, OpenAP
 - Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools.
 - Automatic tool input JSON Schema generation covering path, query, header parameters, and JSON request bodies.
 - HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
-- Persistent interactive REPL shell (`specpilot shell`) supporting `/use`, `/api`, `/tools [tag]`, `/inspect <tool>`, `/call`, `/verbose`, `/history`, and `/help` with tab-autocompletion.
+- Persistent interactive REPL shell (`specpilot shell`) supporting `/use`, `/api`, `/tools [tag]`, `/inspect <tool>`, `/call`, `/verbose [on|off]`, `/history`, `/clear`, and `/help` with tab-autocompletion.
+- Secret-safe session history logging with automatic credential redaction.
 - Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 

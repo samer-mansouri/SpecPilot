@@ -11,8 +11,8 @@ class SessionState:
     """Manages state for an interactive SpecPilot CLI session."""
 
     SECRET_PATTERNS = [
-        re.compile(r"(api[_-]?key|bearer|token|secret|password)\s*[:=]\s*['\"]?([^'\"\s]+)", re.IGNORECASE),
-        re.compile(r"(--json\s+['\"][^'\"]*?(?:token|secret|password|key)[^'\"]*?['\"])", re.IGNORECASE),
+        re.compile(r'("(?:api[_-]?key|bearer|token|secret|password)"\s*:\s*")([^"]+)(")', re.IGNORECASE),
+        re.compile(r"((?:api[_-]?key|bearer|token|secret|password)\s*[:=]\s*['\"]?)([^'\"\s,{}]+)(['\"]?)", re.IGNORECASE),
     ]
 
     def __init__(self) -> None:
@@ -46,8 +46,6 @@ class SessionState:
         redacted = text
         for pattern in self.SECRET_PATTERNS:
             def _replacer(match: re.Match) -> str:
-                if len(match.groups()) == 2:
-                    return f"{match.group(1)}=[REDACTED]"
-                return "[REDACTED_COMMAND]"
+                return f"{match.group(1)}[REDACTED]{match.group(3)}"
             redacted = pattern.sub(_replacer, redacted)
         return redacted
