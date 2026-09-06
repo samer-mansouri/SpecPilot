@@ -1,66 +1,68 @@
 # SpecPilot
 
-SpecPilot is an interactive CLI developer tool for OpenAPI-driven API automation, inspection, and contract testing.
+SpecPilot is an agentic interactive CLI developer tool for OpenAPI-driven API automation, inspection, workflow execution, and contract testing.
 
 ## Overview
 
-SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, request/response models, and security definitions, dynamically converts API operations into Model Context Protocol (MCP) tools, provides CLI commands for inspection and tool execution, and executes automated API contract validation suites.
+SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, request/response models, and security definitions. It dynamically converts API operations into Model Context Protocol (MCP) tools, exposes them to LLMs for multi-step workflow execution via LangGraph, enforces safety policies and secret redaction, manages persistent user profiles, and executes automated API contract validation suites.
 
-## Current Status
+## Core Capabilities
 
-SpecPilot version `v0.6.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, an interactive REPL shell (`specpilot shell`), LangGraph multi-step agent workflows, deterministic safety classification, human-in-the-loop approval controls, and OpenAPI-driven API contract testing.
+- **OpenAPI 3.x Parsing**: Load local JSON/YAML files or remote HTTP/HTTPS specifications with full `$ref` resolution.
+- **Dynamic MCP Tool Conversion**: Convert OpenAPI operations into typed Model Context Protocol (MCP) tools with JSON Schemas.
+- **Interactive REPL Shell**: Persistent interactive shell (`specpilot shell`) with slash commands, tab autocompletion, and natural-language tool orchestration.
+- **LangGraph Agent Workflows**: Stateful multi-step LLM task execution and tool calling with bounded loop controls.
+- **Safety Policy & Secret Redaction**: Risk-based classification (`READ_ONLY`, `MUTATING`, `DESTRUCTIVE`), human-in-the-loop approval, read-only mode, and automatic credential redaction.
+- **API Contract Testing**: Deterministic scenario generation (valid request, missing param, missing body, invalid enum, missing auth) and schema validation (`specpilot test`).
+- **Target API Authentication**: Built-in support for Bearer tokens, API Keys (header or query), and Basic Authentication.
+- **Configuration & Profiles**: Persistent configuration profiles (`specpilot profile`) and global setting inspection (`specpilot config`).
+- **Structured Execution Tracing**: Local JSON trace logging and optional Langfuse exporter integration.
 
-## Features
+## Installation
 
-- Parse OpenAPI 3.x specifications (JSON and YAML).
-- Load specifications from local file paths and remote HTTP/HTTPS URLs with timeout handling.
-- Resolve local `$ref` pointers (e.g. `#/components/schemas/...`).
-- Normalize operations, parameters, request bodies, responses, tags, servers, and security definitions into typed Pydantic models.
-- Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools.
-- Automatic tool input JSON Schema generation covering path, query, header parameters, and JSON request bodies.
-- HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
-- Persistent interactive REPL shell (`specpilot shell`) supporting slash commands and natural-language instructions with tab-autocompletion.
-- LangGraph stateful agent workflow (`SpecPilotGraph`) executing multi-step API workflows (e.g., list products -> select product -> create order).
-- Deterministic Safety Policy Engine (`SafetyPolicy`, `OperationRisk`) classifying operations as `READ_ONLY`, `MUTATING`, or `DESTRUCTIVE`.
-- OpenAPI-driven API contract testing engine (`ScenarioGenerator`, `ContractTestExecutor`, `ContractValidator`).
-- Deterministic test scenario derivation (valid requests, missing parameters, missing JSON body fields, invalid enum values, missing authentication).
-- Response contract validation checking status codes, Content-Type headers, and JSON schemas via `jsonschema`.
-- Terminal contract test execution (`specpilot test`) and REPL slash command (`/test`) with rich summary tables and mismatch failure panels.
-- Interactive human-in-the-loop approval confirmation prompts before executing side-effecting operations or mutating contract tests.
-- Enforced read-only safety mode via CLI flag (`specpilot shell --read-only`, `specpilot test --read-only`) or REPL command (`/safety read-only`) blocking mutating/destructive requests prior to network execution.
-- Secret-safe session history logging and verbose mode operational logging with automatic credential redaction.
-- Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, `specpilot call <tool-name>`, and `specpilot test`.
-- Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
+Ensure Python 3.10+ is installed.
 
-## Interactive Shell Usage
+```bash
+# Install package via pip
+pip install specpilot
 
-Launch the persistent interactive shell:
+# Or install locally in editable mode
+pip install -e .
+
+# Or build wheel distribution using uv
+uv build
+pip install dist/specpilot-*.whl
+```
+
+Once installed, the `specpilot` executable entry point is available globally.
+
+## Quick Start
+
+```bash
+# 1. Launch interactive REPL shell against sample spec
+specpilot shell ./examples/petstore_sample.yaml
+
+# 2. Run automated API contract test suite
+specpilot test ./examples/petstore_sample.yaml --read-only
+
+# 3. Save a persistent profile
+specpilot profile add petstore --location ./examples/petstore_sample.yaml --model gpt-4o-mini
+specpilot profile use petstore
+
+# 4. Inspect active configuration
+specpilot config show
+```
+
+## Interactive CLI
+
+Launch the interactive REPL shell:
 
 ```bash
 specpilot shell [specification-path-or-url] [--read-only]
 ```
 
-Inside the interactive shell:
+Slash commands available in `specpilot shell`:
 
-```text
-SpecPilot v0.6.0
-Connected API: Swagger Petstore (1.0.0)
-Location: ./petstore.yaml
-Tools: 3 available
-
-specpilot> /help
-specpilot> /safety read-only
-specpilot> /tools
-specpilot> /inspect list_pets
-specpilot> /call list_pets {"limit": 5}
-specpilot> /test
-specpilot> /use ./other_api.yaml
-specpilot> /verbose on
-specpilot> /history
-specpilot> /exit
-```
-
-Available slash commands in `specpilot shell`:
 - `/use <location>`: Load and switch to a different OpenAPI specification.
 - `/api`: Display metadata and summary of the currently loaded API.
 - `/tools [tag]`: List all registered MCP tools, optionally filtered by tag.
@@ -74,66 +76,54 @@ Available slash commands in `specpilot shell`:
 - `/help`: Display help text and available shell commands.
 - `/exit`: Exit the shell session.
 
-## API Contract Testing
+## OpenAPI to MCP
 
-SpecPilot automatically derives deterministic contract test cases directly from OpenAPI 3.x specifications:
-
-- **Valid Request Scenarios**: Derives valid sample parameters and request bodies based on contract schemas.
-- **Negative Scenarios**: Tests missing required parameters, missing JSON body fields, invalid enum values, and missing authentication headers.
-- **Contract Validation**: Validates actual HTTP response status codes, content-type headers, and JSON body structure against the documented OpenAPI schema.
-- **Safety Integration**: Mutating (`POST`/`PUT`/`PATCH`) and destructive (`DELETE`) test scenarios respect the active Safety Policy and require explicit permission (`--allow-mutating`) or interactive confirmation before execution.
+SpecPilot dynamically transforms OpenAPI operations into Model Context Protocol (MCP) tools:
 
 ```bash
-# Run contract tests against target API base URL in read-only mode
-specpilot test ./openapi.yaml --base-url https://api.example.com --read-only
+# Inspect all generated MCP tools
+specpilot tools ./examples/petstore_sample.yaml
 
-# Run tests filtered by tag with JSON report export
-specpilot test ./openapi.yaml --tag pets --json-output ./contract_report.json
+# Inspect input JSON Schema for a tool
+specpilot inspect findPetsByStatus ./examples/petstore_sample.yaml
+
+# Manually invoke an MCP tool against target API
+specpilot call findPetsByStatus ./examples/petstore_sample.yaml --json '{"status": "available"}'
 ```
+
+## Agent Workflows
+
+SpecPilot integrates LangGraph stateful agent workflows to execute multi-step natural language instructions:
+
+1. User submits natural-language task (e.g. "Find all available pets and summarize their names").
+2. SpecPilot passes task and MCP tool definitions to LLM.
+3. LLM executes tool calls sequentially, updating session state.
+4. Final synthesized natural-language response is presented to user.
 
 ## Safety Model
 
-SpecPilot includes a built-in Safety Policy Engine to protect remote API data:
+SpecPilot includes a built-in Safety Policy Engine (`SafetyPolicy`) to protect target API data:
 
-- **Read-Only (`GET`, `HEAD`, `OPTIONS`)**: Executed automatically during natural-language workflows and test runs.
+- **Read-Only (`GET`, `HEAD`, `OPTIONS`)**: Executed automatically.
 - **Mutating (`POST`, `PUT`, `PATCH`)**: Requires human confirmation before execution in interactive mode.
-- **Destructive (`DELETE`)**: Always requires explicit human approval before execution.
-- **Read-Only Mode (`--read-only` or `/safety read-only`)**: Hard-enforces read-only execution by blocking all `POST`, `PUT`, `PATCH`, and `DELETE` requests before they reach the network executor.
+- **Destructive (`DELETE`)**: Always requires explicit human approval.
+- **Read-Only Mode (`--read-only` flag or `/safety read-only`)**: Hard-enforces read-only execution by blocking all mutating/destructive requests prior to network execution.
 
-## Installation
+## API Contract Testing
 
-Ensure Python 3.10+ is installed.
-
-```bash
-# Install package using pip
-pip install specpilot
-
-# Or install locally in editable mode
-pip install -e .
-
-# Or build source distribution and wheel using uv
-uv build
-pip install dist/specpilot-*.whl
-```
-
-Once installed, the `specpilot` executable entry point will be available globally in your PATH.
-
-
-## Configuration
-
-SpecPilot supports LLM provider configuration via environment variables (or a `.env` file):
+SpecPilot automatically derives deterministic contract test cases directly from OpenAPI specifications:
 
 ```bash
-export SPECPILOT_LLM_API_KEY="your_api_key_here"
-export SPECPILOT_LLM_BASE_URL="https://api.openai.com/v1"
-export SPECPILOT_LLM_MODEL="gpt-4o-mini"
-export SPECPILOT_LLM_TIMEOUT="30.0"
-export SPECPILOT_LLM_MAX_STEPS="5"
+# Run contract tests against target base URL in read-only mode
+specpilot test ./examples/petstore_sample.yaml --base-url https://petstore.swagger.io/v2 --read-only
+
+# Run tests filtered by tag with JSON report export
+specpilot test ./examples/petstore_sample.yaml --tag pet --json-output ./contract_report.json
 ```
 
 ## Authentication
 
-SpecPilot supports target API authentication via Bearer Tokens, API Keys, and Basic Auth:
+SpecPilot supports common target API authentication mechanisms:
 
 - **Bearer Token**: Set `SPECPILOT_BEARER_TOKEN="your_token"` or pass `--bearer-token`.
 - **API Key**: Set `SPECPILOT_API_KEY="your_key"`, `SPECPILOT_API_KEY_NAME="X-API-Key"`, `SPECPILOT_API_KEY_IN="header"` (or `"query"`).
@@ -141,137 +131,73 @@ SpecPilot supports target API authentication via Bearer Tokens, API Keys, and Ba
 
 All credentials are kept out of trace logs, terminal outputs, and approval prompts via automatic secret redaction.
 
+## Configuration and Profiles
+
+SpecPilot supports persistent configuration profiles to manage target APIs and model options:
+
+```bash
+# Manage profiles
+specpilot profile add production --location ./openapi.yaml --base-url https://api.example.com --read-only
+specpilot profile list
+specpilot profile use production
+specpilot profile show production
+specpilot profile remove production
+
+# Inspect global configuration and storage path
+specpilot config show
+specpilot config path
+```
+
 ## Observability
 
-SpecPilot automatically captures structured execution trace logs for session commands, model interactions, MCP tool executions, HTTP requests, latencies, status codes, and approval decisions:
+SpecPilot records structured JSON execution trace logs for session commands, model calls, MCP tool invocations, latencies, and approvals:
 
-- **Local Trace Files**: Stored in structured JSON format under `~/.specpilot/traces/trace_<session_id>.json`.
-- **Optional Langfuse Integration**: Set `LANGFUSE_PUBLIC_KEY="pk-..."`, `LANGFUSE_SECRET_KEY="sk-..."`, and optional `LANGFUSE_HOST="https://cloud.langfuse.com"` to enable cloud trace export. If unconfigured or missing, SpecPilot degrades gracefully to local tracing only.
-- **Redaction Enforced**: Sensitive headers, tokens, and credentials are automatically scrubbed from trace metadata prior to persistence.
-
-
-
-## Quick Start
-
-```bash
-# Launch interactive REPL shell
-specpilot shell ./tests/fixtures/sample_3_0.yaml
-
-# Run API contract test suite
-specpilot test ./tests/fixtures/sample_3_0.yaml --read-only
-
-# Inspect an OpenAPI specification summary
-specpilot import ./tests/fixtures/sample_3_0.yaml
-
-# List discovered endpoints and operations
-specpilot endpoints ./tests/fixtures/sample_3_0.yaml
-
-# List dynamically generated MCP tools
-specpilot tools ./tests/fixtures/sample_3_0.yaml
-
-# Inspect detailed input schema for a tool
-specpilot inspect list_pets ./tests/fixtures/sample_3_0.yaml
-```
-
-## CLI Usage
-
-```bash
-# Launch interactive shell
-specpilot shell ./openapi.yaml
-
-# Run contract testing suite against target API
-specpilot test ./openapi.yaml --base-url https://api.example.com --read-only
-
-# Display help and available commands
-specpilot --help
-
-# Import local JSON or YAML specification
-specpilot import ./openapi.json
-specpilot import ./openapi.yaml
-
-# Import remote OpenAPI specification over HTTP/HTTPS
-specpilot import https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
-
-# List endpoints table
-specpilot endpoints ./openapi.yaml
-
-# List generated MCP tools
-specpilot tools ./openapi.yaml
-
-# Inspect tool schema and metadata
-specpilot inspect get_pet ./openapi.yaml
-
-# Manually invoke an MCP tool against the target API
-specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
-```
+- **Local Trace Files**: Saved under `~/.specpilot/traces/trace_<session_id>.json`.
+- **Optional Langfuse Integration**: Set `LANGFUSE_PUBLIC_KEY="pk-..."`, `LANGFUSE_SECRET_KEY="sk-..."`, and optional `LANGFUSE_HOST="https://cloud.langfuse.com"` to enable cloud trace export.
 
 ## Architecture
 
-```text
-+--------------------------------------------------------+
-|                     SpecPilot CLI                      |
-|       (specpilot shell, test, slash & NL commands)     |
-+--------------------------------------------------------+
-                           |
-                           v
-+--------------------------------------------------------+
-|             API Contract Testing Engine                |
-|      (ScenarioGenerator, Executor, Validator)          |
-+--------------------------------------------------------+
-                           |
-                           v
-+--------------------------------------------------------+
-|            LangGraph Stateful Agent Workflow           |
-|         (SpecPilotGraph & OpenAICompatibleProvider)    |
-+--------------------------------------------------------+
-                           |
-                           v
-+--------------------------------------------------------+
-|                  Safety Policy Engine                  |
-|     (OperationRisk Classification & Redactor)          |
-+--------------------------------------------------------+
-                           |
-                           v
-+--------------------------------------------------------+
-|                   MCP Tool Registry                    |
-|        (Dynamic Tool Conversion & Schema Gen)          |
-+--------------------------------------------------------+
-                           |
-                           v
-+--------------------------------------------------------+
-|                    HTTP Tool Executor                  |
-|    (Path Substitution, Query, Headers, Body, Secrets)  |
-+--------------------------------------------------------+
+```mermaid
+graph TD
+    CLI[SpecPilot CLI] --> Config[Config & Profile Manager]
+    CLI --> Shell[Interactive REPL Shell]
+    CLI --> Tester[Contract Testing Engine]
+    Shell --> Agent[LangGraph Agent Graph]
+    Agent --> Safety[Safety Policy & Secret Redactor]
+    Tester --> Safety
+    Safety --> MCP[MCP Tool Registry]
+    MCP --> Auth[Auth Manager]
+    Auth --> Exec[HTTP Tool Executor]
+    Exec --> Tracing[Execution Tracer]
 ```
-
-## Supported OpenAPI Features
-
-- OpenAPI 3.0.x and 3.1.x specifications.
-- Local `$ref` pointers (e.g. `#/components/schemas/...`, `#/components/parameters/...`, `#/components/requestBodies/...`).
-- Standard HTTP methods: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `OPTIONS`, `HEAD`.
-
-## Known Limitations
-
-- Remote `$ref` resolution across external URLs is not yet supported.
 
 ## Development
 
-Run unit tests:
+Set up development environment and execute unit test suite:
 
 ```bash
+# Install editable package with dev dependencies
+uv pip install -e ".[dev]"
+
+# Run full test suite with pytest
 uv run pytest
 ```
 
+## Known Limitations
+
+- Remote `$ref` resolution across external URLs is not yet supported (local `$ref` pointers fully supported).
+- OAuth 2.0 PKCE / Authorization Code flows are left for future releases.
+
 ## Roadmap
 
-- **OpenAPI Core**: OpenAPI specification loading and normalization (`v0.1.0`)
-- **Dynamic MCP Tools**: Dynamic OpenAPI to MCP tool conversion and HTTP execution (`v0.2.0`)
-- **Interactive CLI**: Interactive REPL shell with slash commands, autocompletion, and secret redaction (`v0.3.0`)
-- **Agent Workflows**: Multi-step tool execution and LLM orchestration (`v0.4.0`)
-- **Safety System**: Side-effect protection and human approval (`v0.5.0`)
-- **Contract Testing**: API contract validation (`v0.6.0`)
-- **Production Release**: General availability (`v1.0.0`)
+- **OpenAPI Core**: Specification loading, normalization, and `$ref` resolution (`v0.1.0`)
+- **Dynamic MCP Tools**: OpenAPI to MCP tool conversion and HTTP tool execution (`v0.2.0`)
+- **Interactive CLI**: Interactive REPL shell with slash commands and autocompletion (`v0.3.0`)
+- **Agent Workflows**: Bounded multi-step tool execution via LangGraph (`v0.4.0`)
+- **Safety System**: Deterministic safety policy, human approval, and secret redaction (`v0.5.0`)
+- **Contract Testing**: Automated scenario generation and contract schema validation (`v0.6.0`)
+- **Productization & v1 Release**: Persistent profiles, authentication, observability, and packaging (`v1.0.0`)
 
 ## Version
 
-Current version: `0.6.0`
+Current version: `1.0.0`
