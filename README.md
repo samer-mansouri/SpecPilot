@@ -8,7 +8,7 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAPI normalization, MCP server foundation, dynamic tool generation, and HTTP execution of OpenAPI tools are fully implemented.
+SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAPI normalization, Model Context Protocol (MCP) tool generation, HTTP execution, and CLI tool inspection/call commands are fully implemented.
 
 ## Features
 
@@ -19,7 +19,7 @@ SpecPilot is in active development (`v0.1.0-dev`). Specification loading, OpenAP
 - Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools.
 - Automatic tool input schema generation covering path, query, header parameters, and JSON request bodies.
 - HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
-- Terminal CLI inspection via `specpilot import` and `specpilot endpoints`.
+- Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 
 ## Installation
@@ -42,6 +42,12 @@ specpilot import ./tests/fixtures/sample_3_0.yaml
 
 # List discovered endpoints and operations
 specpilot endpoints ./tests/fixtures/sample_3_0.yaml
+
+# List dynamically generated MCP tools
+specpilot tools ./tests/fixtures/sample_3_0.yaml
+
+# Inspect detailed input schema for a tool
+specpilot inspect list_pets ./tests/fixtures/sample_3_0.yaml
 ```
 
 ## CLI Usage
@@ -59,6 +65,15 @@ specpilot import https://raw.githubusercontent.com/OAI/OpenAPI-Specification/mai
 
 # List endpoints table
 specpilot endpoints ./openapi.yaml
+
+# List generated MCP tools
+specpilot tools ./openapi.yaml
+
+# Inspect tool schema and metadata
+specpilot inspect get_pet ./openapi.yaml
+
+# Manually invoke an MCP tool against the target API
+specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 ```
 
 ## Architecture
@@ -66,19 +81,19 @@ specpilot endpoints ./openapi.yaml
 ```text
 +--------------------------------------------------------+
 |                      SpecPilot CLI                     |
-|                (specpilot import/endpoints)            |
+|         (import, endpoints, tools, inspect, call)      |
 +--------------------------------------------------------+
                            |
                            v
 +--------------------------------------------------------+
-|                    OpenAPI Loader                      |
-|            (Local JSON/YAML & HTTP/HTTPS)              |
+|                   MCP Tool Registry                    |
+|        (Dynamic Tool Conversion & Schema Gen)          |
 +--------------------------------------------------------+
                            |
                            v
 +--------------------------------------------------------+
-|                    OpenAPI Parser                      |
-|      (Normalization, Schema & $ref Resolution)         |
+|                    HTTP Tool Executor                  |
+|    (Path Substitution, Query, Headers, Body, Secrets)  |
 +--------------------------------------------------------+
 ```
 
@@ -91,7 +106,7 @@ specpilot endpoints ./openapi.yaml
 ## Known Limitations
 
 - Remote `$ref` resolution across external URLs is not yet supported.
-- Dynamic MCP Tool generation and LLM execution are deferred to Milestone 2.
+- LLM autonomous tool selection and multi-step agent flows will be introduced in upcoming releases.
 
 ## Development
 
