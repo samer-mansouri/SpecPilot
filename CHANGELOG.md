@@ -5,7 +5,17 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-06
+
+### Added
+- Persistent user configuration profile system (`specpilot profile add/list/use/show/remove`) and global configuration inspection (`specpilot config show/path`).
+- Target API authentication mechanisms supporting Bearer tokens (`SPECPILOT_BEARER_TOKEN` / `--bearer-token`), API Keys (`SPECPILOT_API_KEY` / `--api-key`), and Basic Authentication (`SPECPILOT_BASIC_USER` / `SPECPILOT_BASIC_PASS`).
+- Structured execution tracing (`ExecutionTracer`) writing JSON trace logs to `~/.specpilot/traces/` and providing optional Langfuse exporter integration.
+- Public developer documentation, runnable sample OpenAPI specification (`examples/petstore_sample.yaml`), and usage guides.
+- Distribution packaging and console entry point build validation.
+
 ## [0.6.0] - 2026-09-06
+
 
 ### Added
 - OpenAPI-driven deterministic scenario generator (`ScenarioGenerator`) deriving valid requests, missing required parameters, missing JSON body fields, invalid enum values, and missing authentication test cases.
