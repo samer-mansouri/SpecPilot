@@ -146,8 +146,14 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
                            |
                            v
 +--------------------------------------------------------+
-|                 LLM Agent Orchestrator                 |
-|       (SpecPilotAgent & OpenAICompatibleProvider)      |
+|            LangGraph Stateful Agent Workflow           |
+|         (SpecPilotGraph & OpenAICompatibleProvider)    |
++--------------------------------------------------------+
+                           |
+                           v
++--------------------------------------------------------+
+|                  Safety Policy Engine                  |
+|     (OperationRisk Classification & Redactor)          |
 +--------------------------------------------------------+
                            |
                            v
