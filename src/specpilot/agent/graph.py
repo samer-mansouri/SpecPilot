@@ -91,7 +91,18 @@ class SpecPilotGraph:
     def _agent_node(self, state: GraphState) -> Dict[str, Any]:
         steps = state.get("steps", 0) + 1
         messages = list(state.get("messages", []))
-        llm_tools = convert_registry_to_llm_tools(self.registry)
+
+        user_prompt = None
+        for m in messages:
+            if m.role == "user" and isinstance(m.content, str):
+                user_prompt = m.content
+
+        llm_tools = convert_registry_to_llm_tools(
+            self.registry,
+            user_prompt=user_prompt,
+            max_tools=128,
+        )
+
 
         try:
             response = self.provider.complete(messages, tools=llm_tools if llm_tools else None)

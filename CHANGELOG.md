@@ -5,7 +5,13 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-09-06
+
+### Fixed
+- Enforce maximum 128 tools limit when passing tools to OpenAI API (`convert_registry_to_llm_tools`) with prompt relevance scoring to prevent `array_above_max_length` HTTP 400 errors on large OpenAPI specifications.
+
 ## [1.0.1] - 2026-09-06
+
 
 ### Fixed
 - Automatically parse and load local `.env` file variables (`SPECPILOT_LLM_API_KEY`) when initializing `LLMConfig.from_env()`.
