@@ -5,6 +5,14 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-06
+
+### Added
+- Explicit Plan-First Execution Mode (`/plan <prompt>`) generating structured, step-by-step API execution plans with interactive developer confirmation prior to network execution.
+- REPL Session State Persistence (`/save [name]` & `/load [name]`) saving and restoring active spec location, conversational memory, history, and redacted credentials under `~/.specpilot/sessions/`.
+- Binary File Upload & Multipart Form Data Support in `ToolExecutor` automatically packaging file attachments for `multipart/form-data` endpoints.
+- Dynamic tab autocompletion in `specpilot shell` for `/plan`, `/save`, and saved session names under `/load`.
+
 ## [1.1.0] - 2026-09-06
 
 ### Added

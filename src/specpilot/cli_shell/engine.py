@@ -97,6 +97,12 @@ class ShellEngine:
             self._handle_verbose(args_str)
         elif command_name == "/safety":
             self._handle_safety(args_str)
+        elif command_name == "/plan":
+            self._handle_plan(args_str)
+        elif command_name == "/save":
+            self._handle_save(args_str)
+        elif command_name == "/load":
+            self._handle_load(args_str)
         elif command_name == "/clear":
             console.clear()
         elif command_name == "/reset":
@@ -130,6 +136,9 @@ class ShellEngine:
         table.add_row("/tools [tag]", "List available MCP tools (optionally filter by tag)")
         table.add_row("/inspect <tool>", "Inspect detailed schema for an MCP tool")
         table.add_row("/call <tool> [json]", "Execute an MCP tool request against target API")
+        table.add_row("/plan <prompt>", "Generate step-by-step API execution plan before executing")
+        table.add_row("/save [name]", "Save active session state and credentials to disk")
+        table.add_row("/load <name>", "Restore session state and credentials from disk")
         table.add_row("/verbose [on|off]", "Toggle or inspect verbose operational logging mode")
         table.add_row("/safety [read-only|interactive]", "Inspect or set safety execution mode")
         table.add_row("/history", "View session command history (secrets redacted)")
@@ -366,3 +375,67 @@ class ShellEngine:
             error_console.print(f"[bold red]Agent Error:[/bold red] {response.content}")
         else:
             console.print(f"\n[bold green]SpecPilot Agent:[/bold green]\n{response.content}\n")
+
+    def _handle_plan(self, prompt: str) -> None:
+        if not self.state.registry:
+            console.print("[yellow]No API specification loaded. Use [bold]/use <location>[/bold] to load one.[/yellow]")
+            return
+
+        if not prompt.strip():
+            error_console.print("[bold red]Usage:[/bold red] /plan <natural language request>")
+            return
+
+        from specpilot.agent import LLMConfig, OpenAICompatibleProvider, SpecPilotAgent
+
+        config = LLMConfig.from_env()
+        if not config.is_configured():
+            console.print("[yellow]LLM provider is not configured. Set [bold]SPECPILOT_LLM_API_KEY[/bold] to use /plan mode.[/yellow]")
+            return
+
+        provider = OpenAICompatibleProvider(config)
+        agent = SpecPilotAgent(registry=self.state.registry, provider=provider)
+
+        console.print()
+        console.print("[dim cyan]Generating API execution plan...[/dim cyan]")
+        response = agent.generate_plan(prompt.strip())
+
+        console.print()
+        console.print(Panel(f"[bold cyan]Generated API Execution Plan[/bold cyan]\n\n{response.content}", expand=False))
+        console.print()
+
+        try:
+            session = self._get_prompt_session()
+            ans = session.prompt("Execute this plan? [y/N]: ").strip().lower()
+            if ans in ("y", "yes"):
+                console.print("[bold green]Executing planned API workflow...[/bold green]\n")
+                self._handle_agent_prompt(prompt.strip())
+            else:
+                console.print("[dim]Plan execution cancelled.[/dim]\n")
+        except (KeyboardInterrupt, EOFError):
+            console.print("[dim]Plan execution cancelled.[/dim]\n")
+
+    def _handle_save(self, session_name: str) -> None:
+        name = session_name.strip() if session_name and session_name.strip() else "default"
+        try:
+            file_path = self.state.save_session(name)
+            console.print(f"[bold green]Session state saved to:[/bold green] {file_path}")
+        except Exception as err:
+            error_console.print(f"[bold red]Failed to save session:[/bold red] {err}")
+
+    def _handle_load(self, session_name: str) -> None:
+        if not session_name.strip():
+            saved = self.state.list_saved_sessions()
+            if saved:
+                console.print("[bold cyan]Available saved sessions:[/bold cyan] " + ", ".join(saved))
+            else:
+                console.print("[yellow]No saved sessions found. Usage: /load <session-name>[/yellow]")
+            return
+
+        try:
+            file_path = self.state.load_session(session_name.strip())
+            console.print(f"[bold green]Session state restored from:[/bold green] {file_path}")
+            if self.state.spec:
+                console.print(f"[dim]Loaded API: {self.state.spec.title} (v{self.state.spec.api_version})[/dim]")
+        except Exception as err:
+            error_console.print(f"[bold red]Failed to load session:[/bold red] {err}")
+

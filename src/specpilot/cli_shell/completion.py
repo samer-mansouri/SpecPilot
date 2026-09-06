@@ -16,10 +16,14 @@ class SpecPilotCompleter(Completer):
         "/inspect",
         "/call",
         "/test",
+        "/plan",
+        "/save",
+        "/load",
         "/verbose",
         "/safety",
         "/history",
         "/clear",
+        "/reset",
         "/help",
         "/exit",
         "/quit",
@@ -64,6 +68,12 @@ class SpecPilotCompleter(Completer):
                 if tag.startswith(arg_prefix):
                     yield Completion(tag, start_position=-len(arg_prefix))
 
+        elif cmd_name == "/load":
+            # Complete saved session names
+            for session_name in SessionState.list_saved_sessions():
+                if session_name.startswith(arg_prefix):
+                    yield Completion(session_name, start_position=-len(arg_prefix))
+
         elif cmd_name == "/verbose":
             for mode in ["on", "off"]:
                 if mode.startswith(arg_prefix):
@@ -73,3 +83,4 @@ class SpecPilotCompleter(Completer):
             for mode in ["read-only", "interactive"]:
                 if mode.startswith(arg_prefix):
                     yield Completion(mode, start_position=-len(arg_prefix))
+

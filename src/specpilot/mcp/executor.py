@@ -78,6 +78,32 @@ class ToolExecutor:
                 # Default query parameter
                 query_params[key] = val
 
+        files_payload: Optional[Dict[str, Any]] = None
+        json_body: Any = None
+
+        # Check for multipart / file upload attributes
+        import os
+        from pathlib import Path
+        if isinstance(body_data, dict):
+            file_key = None
+            file_val = None
+            for fk in ("file_path", "filePath", "file", "upload_file", "document"):
+                if fk in body_data and isinstance(body_data[fk], str) and os.path.exists(body_data[fk]):
+                    file_key = fk
+                    file_val = body_data[fk]
+                    break
+
+            if file_key and file_val:
+                fp = Path(file_val)
+                files_payload = {file_key: (fp.name, open(fp, "rb"))}
+                # Other fields become form data
+                form_data = {k: v for k, v in body_data.items() if k != file_key}
+                body_data = form_data if form_data else None
+            else:
+                json_body = body_data
+        else:
+            json_body = body_data
+
         target_url = urllib.parse.urljoin(base_url.rstrip("/") + "/", url_path.lstrip("/"))
         req_timeout = timeout if timeout is not None else self.default_timeout
 
@@ -89,9 +115,17 @@ class ToolExecutor:
                 url=target_url,
                 params=query_params if query_params else None,
                 headers=headers if headers else None,
-                json=body_data if body_data is not None else None,
+                json=json_body if (json_body is not None and not files_payload) else None,
+                data=body_data if (files_payload and body_data) else None,
+                files=files_payload if files_payload else None,
             )
             duration_ms = (time.perf_counter() - start_time) * 1000.0
+
+            # Close open file handles if any
+            if files_payload:
+                for _, f_tuple in files_payload.items():
+                    if len(f_tuple) > 1 and hasattr(f_tuple[1], "close"):
+                        f_tuple[1].close()
 
             # Redact sensitive response headers
             clean_headers = self._redact_headers(dict(response.headers))

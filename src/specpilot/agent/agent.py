@@ -101,3 +101,29 @@ class SpecPilotAgent:
             error_message=err_msg,
             messages=res_state.get("messages", []),
         )
+
+    def generate_plan(self, user_prompt: str) -> AgentResponse:
+        """Generate a structured step-by-step API execution plan without executing network requests."""
+        plan_prompt = (
+            f"You are an API Planning Specialist. Review the available tools and construct an explicit, step-by-step execution plan "
+            f"to accomplish the following user request:\n\n"
+            f"User Request: {user_prompt}\n\n"
+            f"Provide a clear, numbered list of planned steps. For each step specify:\n"
+            f"1. Planned Tool / Endpoint\n"
+            f"2. Proposed Parameters / Arguments\n"
+            f"3. Reasoning / Expected Outcome\n\n"
+            f"DO NOT call any tools yet. Simply output the complete plan."
+        )
+
+        from langchain_core.messages import HumanMessage
+        llm = self.provider.get_llm()
+        res_msg = llm.invoke([HumanMessage(content=plan_prompt)])
+        content = res_msg.content if hasattr(res_msg, "content") else str(res_msg)
+
+        return AgentResponse(
+            content=str(content),
+            steps=1,
+            tool_calls=[],
+            is_error=False,
+        )
+
