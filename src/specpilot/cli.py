@@ -22,6 +22,15 @@ def cli() -> None:
     pass
 
 
+@cli.command(name="shell")
+@click.argument("location", type=str, required=False, default=None)
+def shell_cmd(location: Optional[str]) -> None:
+    """Launch interactive SpecPilot shell session."""
+    from specpilot.cli_shell import ShellEngine
+    engine = ShellEngine()
+    engine.start_repl(initial_location=location)
+
+
 @cli.command(name="import")
 @click.argument("location", type=str)
 def import_cmd(location: str) -> None:
