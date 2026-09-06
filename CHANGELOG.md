@@ -5,6 +5,16 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-09-06
+
+### Added
+- Model Context Protocol (`mcp`) SDK integration for dynamically hosting and executing API tools.
+- `ToolConverter` for converting normalized OpenAPI operations into typed MCP tools with clean, deterministic snake_case naming and collision resolution.
+- Automatic JSON Schema generation for tool inputs, unifying path, query, header parameters, and JSON request bodies.
+- `MCPToolRegistry` for managing converted tools and binding them to MCP server instances.
+- `ToolExecutor` HTTP execution engine featuring URL path parameter substitution, query formatting, header mapping, body serialization, and sensitive header redaction.
+- CLI inspection & execution commands: `specpilot tools <location>`, `specpilot inspect <tool-name> <location>`, and `specpilot call <tool-name> <location> --json '{...}'`.
+
 ## [0.1.0] - 2026-09-06
 
 ### Added
