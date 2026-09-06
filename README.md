@@ -8,14 +8,14 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot is in early development (`v0.1.0-dev`). Core OpenAPI 3.x parsing and CLI inspection capabilities are being established under Milestone 1 (OpenAPI Core).
+SpecPilot is in active development (`v0.1.0-dev`). Specification loading for local JSON/YAML files and remote HTTP/HTTPS URLs is fully implemented.
 
 ## Features
 
 - Parse OpenAPI 3.x specifications (JSON and YAML).
-- Load specifications from local file paths and HTTP/HTTPS URLs.
-- Normalize API paths, HTTP methods, operation IDs, tags, parameters, and schemas.
-- CLI output for specification summary and endpoint listing.
+- Load specifications from local file paths and remote HTTP/HTTPS URLs with timeout handling.
+- Actionable error reporting for missing files, network failures, timeouts, and malformed documents.
+
 
 ## Installation
 
