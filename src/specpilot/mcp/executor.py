@@ -4,6 +4,7 @@ import urllib.parse
 
 import httpx
 
+from specpilot.auth.models import AuthConfig
 from specpilot.mcp.models import ExecutionResult, MCPTool
 from specpilot.openapi.errors import SpecPilotError
 
@@ -18,8 +19,13 @@ class ToolExecutor:
 
     SENSITIVE_HEADERS = {"authorization", "api-key", "x-api-key", "bearer", "token", "secret"}
 
-    def __init__(self, default_timeout: float = 10.0) -> None:
+    def __init__(
+        self,
+        default_timeout: float = 10.0,
+        auth_config: Optional[AuthConfig] = None,
+    ) -> None:
         self.default_timeout = default_timeout
+        self.auth_config = auth_config
 
     def execute(
         self,
@@ -28,6 +34,7 @@ class ToolExecutor:
         base_url_override: Optional[str] = None,
         extra_headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
+        auth_config: Optional[AuthConfig] = None,
     ) -> ExecutionResult:
         """Execute a tool with provided arguments."""
         base_url = base_url_override or tool.base_url
@@ -42,6 +49,12 @@ class ToolExecutor:
         headers: Dict[str, str] = {}
         if extra_headers:
             headers.update(extra_headers)
+
+        # Apply authentication if configured
+        eff_auth = auth_config or self.auth_config
+        if eff_auth:
+            eff_auth.apply(headers, query_params)
+
 
         body_data: Any = None
 

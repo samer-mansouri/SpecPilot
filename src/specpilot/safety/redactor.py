@@ -27,6 +27,9 @@ class SecretRedactor:
         "api_key",
         "apikey",
         "api-key",
+        "x-api-key",
+        "x-api-token",
+        "x-auth-token",
         "authorization",
         "auth",
         "bearer",
@@ -37,6 +40,7 @@ class SecretRedactor:
         "password",
         "passwd",
     }
+
 
     @classmethod
     def redact(cls, text: str) -> str:

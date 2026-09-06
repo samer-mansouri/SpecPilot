@@ -124,6 +124,17 @@ export SPECPILOT_LLM_TIMEOUT="30.0"
 export SPECPILOT_LLM_MAX_STEPS="5"
 ```
 
+## Authentication
+
+SpecPilot supports target API authentication via Bearer Tokens, API Keys, and Basic Auth:
+
+- **Bearer Token**: Set `SPECPILOT_BEARER_TOKEN="your_token"` or pass `--bearer-token`.
+- **API Key**: Set `SPECPILOT_API_KEY="your_key"`, `SPECPILOT_API_KEY_NAME="X-API-Key"`, `SPECPILOT_API_KEY_IN="header"` (or `"query"`).
+- **Basic Auth**: Set `SPECPILOT_BASIC_USER="user"` and `SPECPILOT_BASIC_PASS="pass"`.
+
+All credentials are kept out of trace logs, terminal outputs, and approval prompts via automatic secret redaction.
+
+
 ## Quick Start
 
 ```bash

@@ -3,6 +3,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional
 import httpx
 
+from specpilot.auth.models import AuthConfig
 from specpilot.safety.policy import OperationRisk, SafetyPolicy
 from specpilot.safety.redactor import SecretRedactor
 from specpilot.testing.models import (
@@ -29,6 +30,7 @@ class ContractTestExecutor:
         validator: Optional[ContractValidator] = None,
         approval_handler: Optional[ApprovalHandler] = None,
         allow_mutating: bool = False,
+        auth_config: Optional[AuthConfig] = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.safety_policy = safety_policy or SafetyPolicy()
@@ -36,6 +38,8 @@ class ContractTestExecutor:
         self.validator = validator or ContractValidator()
         self.approval_handler = approval_handler
         self.allow_mutating = allow_mutating
+        self.auth_config = auth_config
+
 
     def execute_suite(
         self,
@@ -123,7 +127,10 @@ class ContractTestExecutor:
             path_filled = path_filled.replace(f"{{{k}}}", str(v))
 
         url = f"{self.base_url}{path_filled}"
-        clean_headers = self.redactor.redact_headers(scenario.request_data.headers)
+        req_headers = dict(scenario.request_data.headers or {})
+        req_query = dict(scenario.request_data.query_params or {})
+        if self.auth_config:
+            self.auth_config.apply(req_headers, req_query)
 
         step_start = time.perf_counter()
         try:
@@ -131,11 +138,12 @@ class ContractTestExecutor:
                 response = client.request(
                     method=scenario.method.upper(),
                     url=url,
-                    params=scenario.request_data.query_params or None,
-                    headers=clean_headers or None,
+                    params=req_query or None,
+                    headers=req_headers or None,
                     json=scenario.request_data.body if scenario.request_data.body is not None else None,
                 )
                 duration_ms = round((time.perf_counter() - step_start) * 1000.0, 2)
+
 
                 resp_body = None
                 if response.content:
