@@ -104,26 +104,41 @@ class SpecPilotAgent:
 
     def generate_plan(self, user_prompt: str) -> AgentResponse:
         """Generate a structured step-by-step API execution plan without executing network requests."""
+        tools_summary = ""
+        if self.registry:
+            tool_list = self.registry.list_tools()
+            tools_summary = "\n".join([f"- {t.name}: {t.method} {t.path} ({t.description})" for t in tool_list[:30]])
+
         plan_prompt = (
-            f"You are an API Planning Specialist. Review the available tools and construct an explicit, step-by-step execution plan "
+            f"You are an API Planning Specialist. Review the available API tools and construct an explicit, step-by-step execution plan "
             f"to accomplish the following user request:\n\n"
             f"User Request: {user_prompt}\n\n"
+            f"Available API Tools:\n{tools_summary}\n\n"
             f"Provide a clear, numbered list of planned steps. For each step specify:\n"
             f"1. Planned Tool / Endpoint\n"
             f"2. Proposed Parameters / Arguments\n"
             f"3. Reasoning / Expected Outcome\n\n"
-            f"DO NOT call any tools yet. Simply output the complete plan."
+            f"DO NOT execute any tool calls. Simply output the complete structured plan."
         )
 
-        from langchain_core.messages import HumanMessage
-        llm = self.provider.get_llm()
-        res_msg = llm.invoke([HumanMessage(content=plan_prompt)])
-        content = res_msg.content if hasattr(res_msg, "content") else str(res_msg)
+        try:
+            sys_msg = ChatMessage(role="system", content="You are an API Planning Specialist.")
+            usr_msg = ChatMessage(role="user", content=plan_prompt)
+            res = self.provider.complete([sys_msg, usr_msg])
+            content = res.message.content or "No plan generated."
+            return AgentResponse(
+                content=content,
+                steps=1,
+                tool_calls=[],
+                is_error=False,
+            )
+        except Exception as err:
+            return AgentResponse(
+                content=f"Failed to generate plan: {err}",
+                steps=0,
+                tool_calls=[],
+                is_error=True,
+                error_message=str(err),
+            )
 
-        return AgentResponse(
-            content=str(content),
-            steps=1,
-            tool_calls=[],
-            is_error=False,
-        )
 

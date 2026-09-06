@@ -19,8 +19,11 @@ class MockProvider(LLMProvider):
     def get_llm(self):
         return MockLLM()
 
-    def complete(self, prompt, tools=None):
-        return ChatMessage(content="1. Planned Tool: get_pet\n2. Arguments: petId=42\n3. Reasoning: Retrieve pet details")
+    def complete(self, messages, tools=None):
+        from specpilot.agent.provider import CompletionResponse
+        return CompletionResponse(
+            message=ChatMessage(role="assistant", content="1. Planned Tool: get_pet\n2. Arguments: petId=42\n3. Reasoning: Retrieve pet details")
+        )
 
 
 
