@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specpilot"
-version = "0.5.0"
+version = "0.6.0"
 description = "Agentic interactive CLI for OpenAPI-driven API automation"
 
 readme = "README.md"
@@ -23,6 +23,7 @@ dependencies = [
     "prompt-toolkit>=3.0.0",
     "langgraph>=0.2.0",
     "langchain-core>=0.3.0",
+    "jsonschema>=4.0.0",
 ]
 
 

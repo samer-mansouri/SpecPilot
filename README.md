@@ -1,14 +1,14 @@
 # SpecPilot
 
-SpecPilot is an interactive CLI developer tool for OpenAPI-driven API automation and inspection.
+SpecPilot is an interactive CLI developer tool for OpenAPI-driven API automation, inspection, and contract testing.
 
 ## Overview
 
-SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, request/response models, and security definitions, dynamically converts API operations into Model Context Protocol (MCP) tools, and provides CLI commands for inspection and tool execution.
+SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, request/response models, and security definitions, dynamically converts API operations into Model Context Protocol (MCP) tools, provides CLI commands for inspection and tool execution, and executes automated API contract validation suites.
 
 ## Current Status
 
-SpecPilot version `v0.5.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, an interactive REPL shell (`specpilot shell`), LangGraph multi-step agent workflows, deterministic safety classification, and human-in-the-loop approval controls.
+SpecPilot version `v0.6.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, an interactive REPL shell (`specpilot shell`), LangGraph multi-step agent workflows, deterministic safety classification, human-in-the-loop approval controls, and OpenAPI-driven API contract testing.
 
 ## Features
 
@@ -22,10 +22,14 @@ SpecPilot version `v0.5.0` features OpenAPI specification loading, OpenAPI norma
 - Persistent interactive REPL shell (`specpilot shell`) supporting slash commands and natural-language instructions with tab-autocompletion.
 - LangGraph stateful agent workflow (`SpecPilotGraph`) executing multi-step API workflows (e.g., list products -> select product -> create order).
 - Deterministic Safety Policy Engine (`SafetyPolicy`, `OperationRisk`) classifying operations as `READ_ONLY`, `MUTATING`, or `DESTRUCTIVE`.
-- Interactive human-in-the-loop approval confirmation prompts before executing side-effecting operations.
-- Enforced read-only safety mode via CLI flag (`specpilot shell --read-only`) or REPL command (`/safety read-only`) blocking mutating/destructive requests prior to network execution.
+- OpenAPI-driven API contract testing engine (`ScenarioGenerator`, `ContractTestExecutor`, `ContractValidator`).
+- Deterministic test scenario derivation (valid requests, missing parameters, missing JSON body fields, invalid enum values, missing authentication).
+- Response contract validation checking status codes, Content-Type headers, and JSON schemas via `jsonschema`.
+- Terminal contract test execution (`specpilot test`) and REPL slash command (`/test`) with rich summary tables and mismatch failure panels.
+- Interactive human-in-the-loop approval confirmation prompts before executing side-effecting operations or mutating contract tests.
+- Enforced read-only safety mode via CLI flag (`specpilot shell --read-only`, `specpilot test --read-only`) or REPL command (`/safety read-only`) blocking mutating/destructive requests prior to network execution.
 - Secret-safe session history logging and verbose mode operational logging with automatic credential redaction.
-- Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
+- Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, `specpilot call <tool-name>`, and `specpilot test`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 
 ## Interactive Shell Usage
@@ -39,7 +43,7 @@ specpilot shell [specification-path-or-url] [--read-only]
 Inside the interactive shell:
 
 ```text
-SpecPilot v0.5.0
+SpecPilot v0.6.0
 Connected API: Swagger Petstore (1.0.0)
 Location: ./petstore.yaml
 Tools: 3 available
@@ -49,6 +53,7 @@ specpilot> /safety read-only
 specpilot> /tools
 specpilot> /inspect list_pets
 specpilot> /call list_pets {"limit": 5}
+specpilot> /test
 specpilot> /use ./other_api.yaml
 specpilot> /verbose on
 specpilot> /history
@@ -61,6 +66,7 @@ Available slash commands in `specpilot shell`:
 - `/tools [tag]`: List all registered MCP tools, optionally filtered by tag.
 - `/inspect <tool>`: Show detailed JSON Schema input parameters and operation details for a tool.
 - `/call <tool> [json]`: Execute an MCP tool with optional JSON arguments.
+- `/test [tag]`: Run OpenAPI-driven contract test suite against target API.
 - `/safety [read-only|interactive]`: Inspect or switch session safety execution mode.
 - `/verbose [on|off]`: Toggle verbose output mode.
 - `/history`: Display secret-redacted prompt command history.
@@ -68,11 +74,28 @@ Available slash commands in `specpilot shell`:
 - `/help`: Display help text and available shell commands.
 - `/exit`: Exit the shell session.
 
+## API Contract Testing
+
+SpecPilot automatically derives deterministic contract test cases directly from OpenAPI 3.x specifications:
+
+- **Valid Request Scenarios**: Derives valid sample parameters and request bodies based on contract schemas.
+- **Negative Scenarios**: Tests missing required parameters, missing JSON body fields, invalid enum values, and missing authentication headers.
+- **Contract Validation**: Validates actual HTTP response status codes, content-type headers, and JSON body structure against the documented OpenAPI schema.
+- **Safety Integration**: Mutating (`POST`/`PUT`/`PATCH`) and destructive (`DELETE`) test scenarios respect the active Safety Policy and require explicit permission (`--allow-mutating`) or interactive confirmation before execution.
+
+```bash
+# Run contract tests against target API base URL in read-only mode
+specpilot test ./openapi.yaml --base-url https://api.example.com --read-only
+
+# Run tests filtered by tag with JSON report export
+specpilot test ./openapi.yaml --tag pets --json-output ./contract_report.json
+```
+
 ## Safety Model
 
 SpecPilot includes a built-in Safety Policy Engine to protect remote API data:
 
-- **Read-Only (`GET`, `HEAD`, `OPTIONS`)**: Executed automatically during natural-language workflows.
+- **Read-Only (`GET`, `HEAD`, `OPTIONS`)**: Executed automatically during natural-language workflows and test runs.
 - **Mutating (`POST`, `PUT`, `PATCH`)**: Requires human confirmation before execution in interactive mode.
 - **Destructive (`DELETE`)**: Always requires explicit human approval before execution.
 - **Read-Only Mode (`--read-only` or `/safety read-only`)**: Hard-enforces read-only execution by blocking all `POST`, `PUT`, `PATCH`, and `DELETE` requests before they reach the network executor.
@@ -107,6 +130,9 @@ export SPECPILOT_LLM_MAX_STEPS="5"
 # Launch interactive REPL shell
 specpilot shell ./tests/fixtures/sample_3_0.yaml
 
+# Run API contract test suite
+specpilot test ./tests/fixtures/sample_3_0.yaml --read-only
+
 # Inspect an OpenAPI specification summary
 specpilot import ./tests/fixtures/sample_3_0.yaml
 
@@ -125,6 +151,9 @@ specpilot inspect list_pets ./tests/fixtures/sample_3_0.yaml
 ```bash
 # Launch interactive shell
 specpilot shell ./openapi.yaml
+
+# Run contract testing suite against target API
+specpilot test ./openapi.yaml --base-url https://api.example.com --read-only
 
 # Display help and available commands
 specpilot --help
@@ -154,7 +183,13 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 ```text
 +--------------------------------------------------------+
 |                     SpecPilot CLI                      |
-|          (specpilot shell, slash & NL commands)        |
+|       (specpilot shell, test, slash & NL commands)     |
++--------------------------------------------------------+
+                           |
+                           v
++--------------------------------------------------------+
+|             API Contract Testing Engine                |
+|      (ScenarioGenerator, Executor, Validator)          |
 +--------------------------------------------------------+
                            |
                            v
@@ -191,7 +226,6 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 ## Known Limitations
 
 - Remote `$ref` resolution across external URLs is not yet supported.
-- Automated API contract testing will be introduced in upcoming releases.
 
 ## Development
 
@@ -213,4 +247,4 @@ uv run pytest
 
 ## Version
 
-Current version: `0.5.0`
+Current version: `0.6.0`

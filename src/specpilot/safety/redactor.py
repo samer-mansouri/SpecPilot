@@ -77,3 +77,11 @@ class SecretRedactor:
             else:
                 result[key] = val
         return result
+
+    @classmethod
+    def redact_headers(cls, headers: Dict[str, str]) -> Dict[str, str]:
+        """Redact sensitive header values."""
+        if not headers:
+            return {}
+        redacted = cls.redact_dict(headers)
+        return {str(k): str(v) for k, v in redacted.items()}
