@@ -1,6 +1,6 @@
 # SpecPilot
 
-[![Version](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen.svg)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
@@ -15,7 +15,7 @@ SpecPilot is an agentic interactive CLI developer tool for OpenAPI-driven API au
 
 ```text
 ╭────────────────────────────────────╮
-│ SpecPilot Interactive Shell v1.1.0 │
+│ SpecPilot Interactive Shell v1.2.0 │
 ╰────────────────────────────────────╯
 Type /help to list available commands, or /exit to quit.
 
@@ -60,7 +60,7 @@ Response Body:
 ```text
 $ specpilot test ./openapi.json --base-url http://localhost:8080 --read-only
 
-                         SpecPilot API Contract Testing Suite (106 Scenarios)
+                         SpecPilot API Contract Testing Suite (111 Scenarios)
 +----------------------------------------------------------------------------------------------+
 | Operation / Path             | Scenario Type          | HTTP Status  | Schema Check   | Result |
 |------------------------------+------------------------+--------------+----------------+--------|
@@ -73,7 +73,7 @@ $ specpilot test ./openapi.json --base-url http://localhost:8080 --read-only
 | GET /api/v1/portfolios/{id}  | Invalid Enum Value     | 422 Unprocess| VALID          | PASS   |
 +----------------------------------------------------------------------------------------------+
 
-Test Execution Summary: 106 Passed, 0 Failed, 12 Skipped (Read-Only Mode) in 5.75s
+Test Execution Summary: 111 Passed, 0 Failed, 12 Skipped (Read-Only Mode) in 5.46s
 ```
 
 ---
@@ -84,7 +84,10 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 - **OpenAPI 3.x Engine**: Load local JSON/YAML specs or remote HTTP/HTTPS endpoints with full JSON Pointer (`$ref`) resolution.
 - **Dynamic MCP Tool Converter**: Automatically transform OpenAPI operations into typed Model Context Protocol (MCP) tools with JSON Schemas.
-- **Interactive REPL Shell**: Persistent terminal REPL (`specpilot shell`) featuring slash commands, tab autocompletion, multi-turn conversational memory, and `/reset`.
+- **Interactive REPL Shell**: Persistent terminal REPL (`specpilot shell`) featuring slash commands, tab autocompletion, multi-turn conversational memory, `/plan`, `/save`, `/load`, and `/reset`.
+- **Plan-First Agent Execution Mode (`/plan`)**: Construct structured step-by-step API execution plans with developer confirmation before making network requests.
+- **Session State Persistence (`/save` & `/load`)**: Save and restore active specs, message history, command history, and redacted credentials to/from `~/.specpilot/sessions/`.
+- **Binary File Upload & Multipart Support**: Automatic binary file packaging for upload endpoints consuming `multipart/form-data`.
 - **Universal Auth & Token Lifecycle Engine**: Automatic login endpoint discovery, nested token extraction (Bearer/JWT, OAuth2, API Key, Session), `.env` credential persistence, and transparent HTTP `401 Unauthorized` background re-login & request retry.
 - **LangGraph Agent Workflows**: Stateful multi-step LLM task execution and tool calling with bounded loop controls and response synthesis.
 - **Deterministic Safety Policy**: Risk-based classification (`READ_ONLY`, `MUTATING`, `DESTRUCTIVE`), human-in-the-loop approval prompts, read-only safety mode, and automatic secret redaction.
@@ -111,7 +114,7 @@ flowchart TD
     end
 
     subgraph Agentic["3. Agentic Execution & Safety"]
-        REPL["Interactive REPL Shell Engine"]
+        REPL["Interactive REPL Shell Engine (/plan, /save, /load)"]
         Agent["LangGraph Agent Workflow Engine"]
         Safety["Safety Policy Engine & Secret Redactor"]
     end
@@ -123,7 +126,7 @@ flowchart TD
     end
 
     subgraph Network["5. Execution & Observability"]
-        Executor["HTTP Tool Executor"]
+        Executor["HTTP Tool Executor (Multipart & JSON)"]
         API["Remote / Target REST API"]
         Tracer["Execution Tracer & Langfuse Exporter"]
     end
@@ -287,6 +290,9 @@ Available REPL Slash Commands:
 - `/tools [tag]`: List all registered MCP tools, optionally filtered by tag.
 - `/inspect <tool>`: Show detailed JSON Schema input parameters and operation details for a tool.
 - `/call <tool> [json]`: Execute an MCP tool with optional JSON arguments.
+- `/plan <prompt>`: Generate a step-by-step API execution plan with interactive confirmation before running.
+- `/save [name]`: Save active session state and credentials to disk (`~/.specpilot/sessions/`).
+- `/load <name>`: Restore session state and credentials from disk (`~/.specpilot/sessions/`).
 - `/test [tag]`: Run OpenAPI-driven contract test suite against target API.
 - `/safety [read-only|interactive]`: Inspect or switch session safety execution mode.
 - `/verbose [on|off]`: Toggle verbose output mode.
@@ -298,7 +304,43 @@ Available REPL Slash Commands:
 
 ---
 
-#### Workflow 2: Universal Authentication & Token Persistence
+#### Workflow 2: Plan-First Mode & Session State Persistence
+
+Generate an explicit execution plan before making network calls:
+```text
+specpilot (Recruitment API)> /plan Find candidate #42, view their latest portfolio, and schedule a technical interview for tomorrow at 14:00 UTC
+```
+
+Output:
+```text
+╭──────────────────────────────────────── API Execution Plan ────────────────────────────────────────╮
+│                                                                                                    │
+│  User Request: Find candidate #42, view their latest portfolio, and schedule a technical           │
+│  interview for tomorrow at 14:00 UTC                                                               │
+│                                                                                                    │
+│  Step 1: Retrieve Candidate Profile (GET /api/v1/candidates/{id})                                  │
+│  Step 2: Fetch Latest Portfolio Entry (GET /api/v1/candidates/{id}/portfolio)                       │
+│  Step 3: Schedule Technical Interview (POST /api/v1/interviews)                                    │
+│                                                                                                    │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Execute this plan? [y/N]: 
+```
+
+Save and restore complex debugging sessions across terminal restarts:
+```text
+specpilot (Recruitment API)> /save debug_session_1
+Session state saved to: C:\Users\samer\.specpilot\sessions\debug_session_1.json
+
+# Later in a new terminal session:
+specpilot shell
+specpilot> /load debug_session_1
+Session state restored from: C:\Users\samer\.specpilot\sessions\debug_session_1.json
+```
+
+---
+
+#### Workflow 3: Universal Authentication & Token Persistence
 
 Perform login directly via `specpilot call` or through the interactive agent:
 
@@ -317,7 +359,7 @@ Subsequent CLI commands and REPL sessions read credentials directly from `.env`.
 
 ---
 
-#### Workflow 3: Automated API Contract Testing
+#### Workflow 4: Automated API Contract Testing
 
 SpecPilot generates contract test suites directly from your OpenAPI specification:
 
@@ -338,7 +380,7 @@ SpecPilot tests each operation against 5 deterministic test scenarios:
 
 ---
 
-#### Workflow 4: Configuration & Persistent Profiles
+#### Workflow 5: Configuration & Persistent Profiles
 
 Manage target APIs, default models, and environment profiles:
 
@@ -400,7 +442,7 @@ cd SpecPilot
 # Install editable package with dev dependencies
 uv pip install -e ".[dev]"
 
-# Execute unit test suite (106 tests)
+# Execute unit test suite (111 tests)
 .\.venv\Scripts\pytest.exe
 ```
 
@@ -408,4 +450,4 @@ uv pip install -e ".[dev]"
 
 ## Version
 
-Current version: `1.1.0`
+Current version: `1.2.0`
