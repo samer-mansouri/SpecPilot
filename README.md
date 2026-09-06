@@ -134,6 +134,15 @@ SpecPilot supports target API authentication via Bearer Tokens, API Keys, and Ba
 
 All credentials are kept out of trace logs, terminal outputs, and approval prompts via automatic secret redaction.
 
+## Observability
+
+SpecPilot automatically captures structured execution trace logs for session commands, model interactions, MCP tool executions, HTTP requests, latencies, status codes, and approval decisions:
+
+- **Local Trace Files**: Stored in structured JSON format under `~/.specpilot/traces/trace_<session_id>.json`.
+- **Optional Langfuse Integration**: Set `LANGFUSE_PUBLIC_KEY="pk-..."`, `LANGFUSE_SECRET_KEY="sk-..."`, and optional `LANGFUSE_HOST="https://cloud.langfuse.com"` to enable cloud trace export. If unconfigured or missing, SpecPilot degrades gracefully to local tracing only.
+- **Redaction Enforced**: Sensitive headers, tokens, and credentials are automatically scrubbed from trace metadata prior to persistence.
+
+
 
 ## Quick Start
 

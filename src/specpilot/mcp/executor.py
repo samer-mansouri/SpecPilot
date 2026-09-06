@@ -7,6 +7,7 @@ import httpx
 from specpilot.auth.models import AuthConfig
 from specpilot.mcp.models import ExecutionResult, MCPTool
 from specpilot.openapi.errors import SpecPilotError
+from specpilot.tracing import get_tracer
 
 
 class ToolExecutionError(SpecPilotError):
@@ -54,7 +55,6 @@ class ToolExecutor:
         eff_auth = auth_config or self.auth_config
         if eff_auth:
             eff_auth.apply(headers, query_params)
-
 
         body_data: Any = None
 
@@ -107,7 +107,7 @@ class ToolExecutor:
             is_error = response.is_error
             error_msg = f"HTTP {response.status_code}: {response.reason_phrase}" if is_error else None
 
-            return ExecutionResult(
+            res = ExecutionResult(
                 status_code=response.status_code,
                 headers=clean_headers,
                 body=parsed_body,
@@ -115,6 +115,16 @@ class ToolExecutor:
                 error_message=error_msg,
                 duration_ms=round(duration_ms, 2),
             )
+            get_tracer().trace("mcp_tool_call", {
+                "tool_name": tool.name,
+                "method": tool.method,
+                "target_url": target_url,
+                "status_code": response.status_code,
+                "duration_ms": round(duration_ms, 2),
+                "is_error": is_error,
+            })
+            return res
+
 
         except httpx.TimeoutException as err:
             duration_ms = (time.perf_counter() - start_time) * 1000.0
