@@ -74,6 +74,18 @@ uv pip install -e .
 pip install -e .
 ```
 
+## Configuration
+
+SpecPilot supports LLM provider configuration via environment variables (or a `.env` file):
+
+```bash
+export SPECPILOT_LLM_API_KEY="your_api_key_here"
+export SPECPILOT_LLM_BASE_URL="https://api.openai.com/v1"
+export SPECPILOT_LLM_MODEL="gpt-4o-mini"
+export SPECPILOT_LLM_TIMEOUT="30.0"
+export SPECPILOT_LLM_MAX_STEPS="5"
+```
+
 ## Quick Start
 
 ```bash
