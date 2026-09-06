@@ -8,7 +8,7 @@ SpecPilot parses OpenAPI 3.x specifications to discover endpoints, parameters, r
 
 ## Current Status
 
-SpecPilot version `v0.3.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, and an interactive REPL shell (`specpilot shell`) with autocompletion, slash commands, and secret redaction.
+SpecPilot version `v0.4.0` features OpenAPI specification loading, OpenAPI normalization, MCP tool generation, HTTP tool execution, an interactive REPL shell (`specpilot shell`), and LLM-powered natural language tool execution loops.
 
 ## Features
 
@@ -19,8 +19,10 @@ SpecPilot version `v0.3.0` features OpenAPI specification loading, OpenAPI norma
 - Dynamic conversion of OpenAPI operations into callable Model Context Protocol (MCP) tools.
 - Automatic tool input JSON Schema generation covering path, query, header parameters, and JSON request bodies.
 - HTTP tool execution engine supporting path substitution, query parameters, header mapping, body serialization, and secret redaction.
-- Persistent interactive REPL shell (`specpilot shell`) supporting `/use`, `/api`, `/tools [tag]`, `/inspect <tool>`, `/call`, `/verbose [on|off]`, `/history`, `/clear`, and `/help` with tab-autocompletion.
-- Secret-safe session history logging with automatic credential redaction and robust error handling.
+- Persistent interactive REPL shell (`specpilot shell`) supporting slash commands and natural-language instructions with tab-autocompletion.
+- Model provider abstraction (`LLMProvider`, `OpenAICompatibleProvider`, `LLMConfig`) supporting OpenAI-compatible chat completion APIs.
+- Bounded agentic tool execution loop (`SpecPilotAgent`) executing multi-step tool calls, validating arguments, and synthesizing answers.
+- Secret-safe session history logging and verbose mode operational logging with automatic credential redaction.
 - Terminal CLI inspection via `specpilot import`, `specpilot endpoints`, `specpilot tools`, `specpilot inspect <tool-name>`, and `specpilot call <tool-name>`.
 - Actionable error reporting for missing files, network failures, timeouts, malformed documents, and unresolvable references.
 
@@ -35,7 +37,7 @@ specpilot shell [specification-path-or-url]
 Inside the interactive shell:
 
 ```text
-SpecPilot v0.3.0
+SpecPilot v0.4.0
 Connected API: Swagger Petstore (1.0.0)
 Location: ./petstore.yaml
 Tools: 3 available
@@ -139,7 +141,13 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 ```text
 +--------------------------------------------------------+
 |                     SpecPilot CLI                      |
-|    (specpilot shell, import, endpoints, tools, call)   |
+|          (specpilot shell, slash & NL commands)        |
++--------------------------------------------------------+
+                           |
+                           v
++--------------------------------------------------------+
+|                 LLM Agent Orchestrator                 |
+|       (SpecPilotAgent & OpenAICompatibleProvider)      |
 +--------------------------------------------------------+
                            |
                            v
@@ -164,7 +172,7 @@ specpilot call list_pets ./openapi.yaml --json '{"limit": 10}'
 ## Known Limitations
 
 - Remote `$ref` resolution across external URLs is not yet supported.
-- LLM autonomous tool selection and multi-step agent flows will be introduced in upcoming releases.
+- Fine-grained interactive human approval for mutating side-effecting tools will be introduced in upcoming safety releases.
 
 ## Development
 
@@ -186,4 +194,4 @@ uv run pytest
 
 ## Version
 
-Current version: `0.3.0`
+Current version: `0.4.0`

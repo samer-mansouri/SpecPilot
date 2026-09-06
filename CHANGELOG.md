@@ -5,6 +5,15 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-06
+
+### Added
+- Model provider abstraction (`LLMProvider`, `OpenAICompatibleProvider`, `LLMConfig`) supporting OpenAI-compatible chat completion APIs via HTTP.
+- Environment-based model configuration (`SPECPILOT_LLM_API_KEY`, `SPECPILOT_LLM_BASE_URL`, `SPECPILOT_LLM_MODEL`, `SPECPILOT_LLM_TIMEOUT`, `SPECPILOT_LLM_MAX_STEPS`) and template `.env.example`.
+- MCP-to-LLM tool converter (`convert_registry_to_llm_tools`, `mcp_tool_to_llm_tool`) exposing generated API tools to the LLM as structured JSON schemas.
+- Bounded agentic tool execution loop (`SpecPilotAgent`) for multi-step tool calls, argument validation, max step limits, and error handling.
+- Natural language command execution directly in `specpilot shell` with verbose operational tool logging and secret redaction.
+
 ## [0.3.0] - 2026-09-06
 
 ### Added
