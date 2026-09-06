@@ -5,7 +5,13 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-09-06
+
+### Fixed
+- Automatically parse and load local `.env` file variables (`SPECPILOT_LLM_API_KEY`) when initializing `LLMConfig.from_env()`.
+
 ## [1.0.0] - 2026-09-06
+
 
 ### Added
 - Persistent user configuration profile system (`specpilot profile add/list/use/show/remove`) and global configuration inspection (`specpilot config show/path`).

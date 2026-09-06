@@ -23,12 +23,14 @@ def test_llm_config_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_llm_config_unconfigured(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SPECPILOT_DISABLE_DOTENV", "1")
     monkeypatch.delenv("SPECPILOT_LLM_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     config = LLMConfig.from_env()
     assert config.api_key is None
     assert config.is_configured() is False
+
 
 
 @respx.mock

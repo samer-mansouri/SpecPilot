@@ -4,8 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specpilot"
-version = "1.0.0"
+version = "1.0.1"
 description = "Agentic interactive CLI for OpenAPI-driven API automation"
+
 
 
 readme = "README.md"
