@@ -11,13 +11,70 @@ SpecPilot is an agentic interactive CLI developer tool for OpenAPI-driven API au
 ## Visual Preview
 
 ### 1. Interactive REPL Shell & Agent Orchestration
-![SpecPilot REPL Shell](assets/specpilot_repl_terminal.jpg)
+![SpecPilot REPL Shell](assets/specpilot_repl_terminal.svg)
+
+```text
+╭────────────────────────────────────╮
+│ SpecPilot Interactive Shell v1.1.0 │
+╰────────────────────────────────────╯
+Type /help to list available commands, or /exit to quit.
+
+Loaded OpenAPI specification: Intelligent Recruitment Platform API (v1.0.0)
+specpilot (Intelligent Recruitment Platform API)> Find candidate #4, view their latest portfolio, and schedule an interview
+
+SpecPilot Agent:
+I have retrieved the profile and application details for candidate Samer Mansouri (Candidate #4).
+- Skills: Python, FastAPI, React, PostgreSQL, LLM Agent Systems
+- Latest Portfolio: Intelligent Multi-Agent Orchestrator Platform
+- Interview Scheduled: Technical System Design Interview on 2026-09-10 at 14:00 UTC
+
+specpilot (Intelligent Recruitment Platform API)> _
+```
 
 ### 2. Universal Authentication & Token Recovery
-![Universal Authentication Engine](assets/specpilot_auth_terminal.jpg)
+![Universal Authentication Engine](assets/specpilot_auth_terminal.svg)
+
+```text
+$ specpilot call login ./openapi.json --json '{"requestBody": {"usernameOrEmail": "superadmin", "password": "password123"}}'
+
+HTTP Status: 200 (185.24ms)
+[Auth Token Detected] Automatically saved SPECPILOT_BEARER_TOKEN to runtime environment and .env
+
+Response Body:
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwidXNlcklkIjox... ***REDACTED***",
+    "tokenType": "Bearer",
+    "expiresIn": 86400
+  }
+}
+
+[Background Auth Recovery] Automatic HTTP 401 recovery active. Saved login tool 'login' to .env
+```
 
 ### 3. Automated API Contract Testing Engine
-![Automated API Contract Testing](assets/specpilot_contract_testing_terminal.jpg)
+![Automated API Contract Testing](assets/specpilot_contract_testing_svg.svg)
+
+```text
+$ specpilot test ./openapi.json --base-url http://localhost:8080 --read-only
+
+                         SpecPilot API Contract Testing Suite (106 Scenarios)
++----------------------------------------------------------------------------------------------+
+| Operation / Path             | Scenario Type          | HTTP Status  | Schema Check   | Result |
+|------------------------------+------------------------+--------------+----------------+--------|
+| GET /api/v1/candidates       | Valid Request          | 200 OK       | VALID          | PASS   |
+| GET /api/v1/candidates/{id}  | Valid Request (id=4)   | 200 OK       | VALID          | PASS   |
+| GET /api/v1/candidates/{id}  | Missing Required Param | 400 Bad Req  | VALID          | PASS   |
+| POST /api/v1/candidates      | Mutating Request       | Blocked      | N/A (Safety)   | SKIPPED|
+| POST /api/v1/auth/login      | Valid Credentials      | 200 OK       | VALID          | PASS   |
+| GET /api/v1/interviews       | Missing Auth Header    | 401 Unauth   | VALID          | PASS   |
+| GET /api/v1/portfolios/{id}  | Invalid Enum Value     | 422 Unprocess| VALID          | PASS   |
++----------------------------------------------------------------------------------------------+
+
+Test Execution Summary: 106 Passed, 0 Failed, 12 Skipped (Read-Only Mode) in 5.75s
+```
 
 ---
 
@@ -135,33 +192,36 @@ When given natural language instructions, SpecPilot passes registered MCP tool d
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle: User submits prompt in REPL shell
-    Idle --> LLM: Send prompt & MCP Tool JSON Schemas
-    LLM --> ToolSelected: LLM selects operation to call
+    [*] --> Idle: Submit Prompt
+    Idle --> LLM: Send Prompt & Tool Schemas
+    LLM --> ToolSelected: Select Operation
     
     state SafetyCheck <<choice>>
-    ToolSelected --> SafetyCheck: Inspect Operation Risk
+    ToolSelected --> SafetyCheck: Risk Check
     
-    SafetyCheck --> ReadOnly: Risk = READ_ONLY (GET/HEAD)
+    SafetyCheck --> ReadOnly: Risk = READ_ONLY
     SafetyCheck --> Mutating: Risk = MUTATING or DESTRUCTIVE
     
-    Mutating --> ApprovalPrompt: Read-Only Mode Active? No
-    Read-Only Mode Active --> Blocked: Hard Read-Only Flag Set
-    Blocked --> LLM: Return error (Operation blocked by safety policy)
+    state ReadOnlyCheck <<choice>>
+    Mutating --> ReadOnlyCheck: Read-Only Enforced?
     
-    ApprovalPrompt --> UserDecision: Display colorized request details & prompt [y/N]
+    ReadOnlyCheck --> Blocked: Yes
+    ReadOnlyCheck --> ApprovalPrompt: No
+    
+    Blocked --> LLM: Safety Policy Error
+    ApprovalPrompt --> UserDecision: Display Prompt [y/N]
     
     state UserDecision <<choice>>
-    UserDecision --> Executing: User approves (y)
-    UserDecision --> Aborted: User rejects (N)
+    UserDecision --> Executing: Approved (y)
+    UserDecision --> Aborted: Rejected (N)
     
-    Aborted --> LLM: Return user cancellation notice
-    ReadOnly --> Executing: Execute network request
+    Aborted --> LLM: Cancellation Notice
+    ReadOnly --> Executing: Network Request
     
-    Executing --> ProcessResult: Parse HTTP Response & Redact Secrets
-    ProcessResult --> LLM: Return execution result to Agent
-    LLM --> Synthesize: Complete instruction task
-    Synthesize --> [*]: Display final natural language response
+    Executing --> ProcessResult: HTTP Response & Secret Redaction
+    ProcessResult --> LLM: Return Result to Agent
+    LLM --> Synthesize: Complete Task
+    Synthesize --> [*]: Display Response
 ```
 
 ---
