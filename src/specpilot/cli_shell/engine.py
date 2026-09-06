@@ -27,9 +27,14 @@ class ShellEngine:
     def _get_prompt_session(self) -> PromptSession[str]:
         if self._prompt_session is None:
             from prompt_toolkit.output import DummyOutput
+            from specpilot.cli_shell.completion import SpecPilotCompleter
             import sys
             output = None if sys.stdout.isatty() else DummyOutput()
-            self._prompt_session = PromptSession(history=InMemoryHistory(), output=output)
+            self._prompt_session = PromptSession(
+                history=InMemoryHistory(),
+                completer=SpecPilotCompleter(self.state),
+                output=output,
+            )
         return self._prompt_session
 
     def start_repl(self, initial_location: Optional[str] = None) -> None:
