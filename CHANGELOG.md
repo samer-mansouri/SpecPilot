@@ -5,6 +5,17 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-09-06
+
+### Added
+- OpenAPI-driven deterministic scenario generator (`ScenarioGenerator`) deriving valid requests, missing required parameters, missing JSON body fields, invalid enum values, and missing authentication test cases.
+- API contract test execution engine (`ContractTestExecutor`) integrated with existing HTTP execution and safety policy mechanisms (`SafetyPolicy`).
+- Response contract validator (`ContractValidator`) validating HTTP response status codes, Content-Type headers, and JSON schemas via `jsonschema`.
+- Terminal contract test runner CLI command (`specpilot test <location> [--tag <tag>] [--read-only] [--base-url <url>] [--json-output <path>]`).
+- Interactive REPL slash command `/test [tag]` in `specpilot shell` with dynamic tag autocompletion.
+- Rich formatted test summary tables, detailed scenario status breakdowns, and contract mismatch failure panels with optional JSON export.
+- AI-assisted exploratory edge case scenario generator (`ExploratoryScenarioGenerator`).
+
 ## [0.5.0] - 2026-09-06
 
 ### Added
