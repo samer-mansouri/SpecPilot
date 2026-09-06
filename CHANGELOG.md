@@ -5,6 +5,15 @@ All notable changes to SpecPilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-09-06
+
+### Added
+- LangGraph stateful agent workflow (`SpecPilotGraph`) supporting multi-step API execution flows and state graph orchestration.
+- Deterministic Safety Policy Engine (`SafetyPolicy`, `OperationRisk`) classifying operations as `READ_ONLY` (`GET`/`HEAD`/`OPTIONS`), `MUTATING` (`POST`/`PUT`/`PATCH`), or `DESTRUCTIVE` (`DELETE`).
+- Interactive human-in-the-loop approval confirmation prompt displaying colorized request details before executing side-effecting operations.
+- Global `--read-only` CLI flag (`specpilot shell --read-only`) and REPL `/safety` command enforcing hard read-only safety modes that block mutating/destructive requests prior to network execution.
+- Reusable `SecretRedactor` utility recursively redacting API keys, Bearer tokens, passwords, and sensitive headers from approval prompts and logs.
+
 ## [0.4.0] - 2026-09-06
 
 ### Added
