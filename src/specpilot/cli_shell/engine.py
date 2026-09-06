@@ -95,6 +95,8 @@ class ShellEngine:
             self._handle_history()
         elif command_name == "/verbose":
             self._handle_verbose(args_str)
+        elif command_name == "/safety":
+            self._handle_safety(args_str)
         elif command_name == "/clear":
             console.clear()
         elif command_name == "/call":
@@ -126,6 +128,7 @@ class ShellEngine:
         table.add_row("/inspect <tool>", "Inspect detailed schema for an MCP tool")
         table.add_row("/call <tool> [json]", "Execute an MCP tool request against target API")
         table.add_row("/verbose [on|off]", "Toggle or inspect verbose operational logging mode")
+        table.add_row("/safety [read-only|interactive]", "Inspect or set safety execution mode")
         table.add_row("/history", "View session command history (secrets redacted)")
         table.add_row("/clear", "Clear terminal screen")
         table.add_row("/help", "Display this help reference")
@@ -287,6 +290,20 @@ class ShellEngine:
             console.print(str(result.body))
         console.print()
 
+    def _handle_safety(self, mode: str) -> None:
+        sub = mode.strip().lower()
+        if sub in ("read-only", "readonly"):
+            self.state.read_only = True
+            console.print("[bold green]Safety mode set to Read-Only.[/bold green]")
+        elif sub in ("interactive", "normal"):
+            self.state.read_only = False
+            console.print("[bold green]Safety mode set to Interactive.[/bold green]")
+        elif not sub:
+            status = "Read-Only" if self.state.read_only else "Interactive"
+            console.print(f"Safety mode is currently [bold]{status}[/bold].")
+        else:
+            error_console.print("[bold red]Usage:[/bold red] /safety [read-only|interactive]")
+
     def _handle_agent_prompt(self, prompt: str) -> None:
         if not self.state.registry:
             console.print(
@@ -314,7 +331,26 @@ class ShellEngine:
             status = result.status_code if result.status_code is not None else "error"
             console.print(f"[dim cyan][Result][/dim cyan] Status {status}")
 
-        response = agent.run(prompt, verbose_callback=_verbose_callback if self.state.verbose else None)
+        def _approval_handler(method: str, path: str, args: Dict[str, Any]) -> bool:
+            clean_args = self.state.redact_secrets(json.dumps(args, indent=2))
+            console.print()
+            console.print(Panel("[bold yellow]Safety Policy Approval Required[/bold yellow]", expand=False))
+            console.print(f"[bold]Operation:[/bold] {method.upper()} {path}")
+            console.print(f"[bold]Arguments:[/bold]\n{Syntax(clean_args, 'json', theme='monokai')}")
+            console.print("[dim]This operation modifies remote data.[/dim]")
+            try:
+                session = self._get_prompt_session()
+                ans = session.prompt("Execute? [y/N]: ").strip().lower()
+                return ans in ("y", "yes")
+            except (KeyboardInterrupt, EOFError):
+                return False
+
+        response = agent.run(
+            prompt,
+            read_only=self.state.read_only,
+            approval_handler=_approval_handler,
+            verbose_callback=_verbose_callback if self.state.verbose else None,
+        )
 
         if response.is_error:
             error_console.print(f"[bold red]Agent Error:[/bold red] {response.content}")

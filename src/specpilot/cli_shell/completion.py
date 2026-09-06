@@ -16,6 +16,7 @@ class SpecPilotCompleter(Completer):
         "/inspect",
         "/call",
         "/verbose",
+        "/safety",
         "/history",
         "/clear",
         "/help",
@@ -64,5 +65,10 @@ class SpecPilotCompleter(Completer):
 
         elif cmd_name == "/verbose":
             for mode in ["on", "off"]:
+                if mode.startswith(arg_prefix):
+                    yield Completion(mode, start_position=-len(arg_prefix))
+
+        elif cmd_name == "/safety":
+            for mode in ["read-only", "interactive"]:
                 if mode.startswith(arg_prefix):
                     yield Completion(mode, start_position=-len(arg_prefix))

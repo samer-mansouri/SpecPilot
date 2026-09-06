@@ -24,10 +24,18 @@ def cli() -> None:
 
 @cli.command(name="shell")
 @click.argument("location", type=str, required=False, default=None)
-def shell_cmd(location: Optional[str]) -> None:
+@click.option(
+    "--read-only",
+    is_flag=True,
+    default=False,
+    help="Enforce read-only safety mode (blocks mutating/destructive requests).",
+)
+def shell_cmd(location: Optional[str], read_only: bool) -> None:
     """Launch interactive SpecPilot shell session."""
-    from specpilot.cli_shell import ShellEngine
-    engine = ShellEngine()
+    from specpilot.cli_shell import SessionState, ShellEngine
+    state = SessionState()
+    state.read_only = read_only
+    engine = ShellEngine(state=state)
     engine.start_repl(initial_location=location)
 
 
